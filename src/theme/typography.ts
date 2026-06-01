@@ -3,13 +3,18 @@ import { Platform } from 'react-native';
 export const fontFamilies = {
   display: Platform.select({
     ios: 'CabinetGrotesk-Black',
-    android: 'sans-serif-condensed',
+    android: 'CabinetGrotesk-Black',
     default: 'CabinetGrotesk-Black',
   }),
   body: Platform.select({
     ios: 'Satoshi-Medium',
-    android: 'sans-serif',
+    android: 'Satoshi-Medium',
     default: 'Satoshi-Medium',
+  }),
+  bodyBold: Platform.select({
+    ios: 'Satoshi-Bold',
+    android: 'Satoshi-Bold',
+    default: 'Satoshi-Bold',
   }),
 } as const;
 
@@ -43,6 +48,11 @@ export const typography = {
     fontFamily: fontFamilies.body,
     fontSize: 17,
     lineHeight: 24,
+  },
+  small: {
+    fontFamily: fontFamilies.bodyBold,
+    fontSize: 14,
+    lineHeight: 21,
   },
   caption: {
     fontFamily: fontFamilies.body,

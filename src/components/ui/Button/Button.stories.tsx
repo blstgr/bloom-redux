@@ -1,0 +1,134 @@
+import type { Meta, StoryObj } from '@storybook/react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
+
+import { spacing } from '../../../theme';
+
+import { Button } from './Button';
+
+const meta = {
+  title: 'Spec/Button',
+  component: Button,
+  args: {
+    label: 'Continue',
+    layout: 'hug',
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const All: Story = {
+  name: 'All',
+  render: () => (
+    <ScrollView>
+      <View style={styles.stack}>
+        <Button label="Continue" layout="hug" variant="primary" />
+        <Button label="Continue" layout="hug" variant="secondary" />
+        <Button label="Continue" size="small" variant="secondary" />
+        <Button icon="google" label="Continue with Google" layout="hug" variant="secondary" />
+        <Button icon="plus" label={undefined} variant="icon" />
+        <Button icon="google" label="Continue with Google" layout="fill" />
+        <Button label="Continue" layout="fill" loading variant="secondary" />
+        <View style={styles.row}>
+          <Button icon="plus" loading variant="primary" />
+          <Button icon="plus" loading size="small" variant="secondary" />
+        </View>
+        <View style={styles.row}>
+          <Button disabled label="Continue" layout="hug" variant="primary" />
+          <Button disabled label="Continue" layout="hug" variant="secondary" />
+        </View>
+      </View>
+    </ScrollView>
+  ),
+};
+
+export const B_Primary: Story = {
+  name: 'Primary',
+  render: () => (
+    <View style={styles.stack}>
+      <Button label="Continue" layout="hug" variant="primary" />
+    </View>
+  ),
+};
+
+export const C_Secondary: Story = {
+  name: 'Secondary',
+  render: () => (
+    <View style={styles.stack}>
+      <Button label="Continue" layout="hug" variant="secondary" />
+    </View>
+  ),
+};
+
+export const D_Small: Story = {
+  name: 'Small',
+  render: () => (
+    <View style={styles.stack}>
+      <Button label="Continue" layout="hug" size="small" variant="secondary" />
+    </View>
+  ),
+};
+
+export const E_WithIcon: Story = {
+  name: 'With icon',
+  render: () => (
+    <View style={styles.stack}>
+      <Button icon="google" label="Continue with Google" layout="hug" variant="secondary" />
+    </View>
+  ),
+};
+
+export const F_IconOnly: Story = {
+  name: 'Icon only',
+  render: () => (
+    <View style={styles.stack}>
+      <Button icon="plus" label={undefined} variant="icon" />
+    </View>
+  ),
+};
+
+export const G_FillLayout: Story = {
+  name: 'Fill layout',
+  render: () => (
+    <View style={styles.stack}>
+      <Button icon="google" label="Continue with Google" layout="fill" variant="primary" />
+    </View>
+  ),
+};
+
+export const H_Loading: Story = {
+  name: 'Loading',
+  render: () => (
+    <View style={styles.stack}>
+      <Button label="Continue" layout="fill" loading variant="secondary" />
+      <View style={styles.row}>
+        <Button icon="plus" loading variant="primary" />
+        <Button icon="plus" loading size="small" variant="secondary" />
+      </View>
+    </View>
+  ),
+};
+
+export const I_Disabled: Story = {
+  name: 'Disabled',
+  render: () => (
+    <View style={styles.row}>
+      <Button disabled label="Continue" layout="hug" variant="primary" />
+      <Button disabled label="Continue" layout="hug" variant="secondary" />
+    </View>
+  ),
+};
+
+const styles = StyleSheet.create({
+  stack: {
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    width: 320,
+  },
+  row: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+});

@@ -1,16 +1,11 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import React from 'react';
+import { StatusBar, useColorScheme } from 'react-native';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
+
+import { HomeScreen } from './src/screens/HomeScreen';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -26,20 +21,13 @@ function App() {
 function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
 
-  return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
-    </View>
-  );
+  return <HomeScreen safeAreaInsets={safeAreaInsets} />;
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
+let AppEntryPoint = App;
 
-export default App;
+if (process.env.STORYBOOK_ENABLED === 'true') {
+  AppEntryPoint = require('./.rnstorybook').default;
+}
+
+export default AppEntryPoint;

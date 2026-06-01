@@ -1,0 +1,6 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "echo 'No web build for this React Native project'",
+  "outputDirectory": ".",
+  "installCommand": "npm install"
+}

@@ -1,40 +1,123 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
+import { ScrollView, StyleSheet, View } from 'react-native';
 
-import { PhotoGrid } from './PhotoGrid';
-import { PhotoRow } from './PhotoRow';
-
-const images = [
-  'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?w=400',
-  'https://images.unsplash.com/photo-1485955900006-10f4d324d411?w=400',
-  'https://images.unsplash.com/photo-1463320726281-696a485928c7?w=400',
-  'https://images.unsplash.com/photo-1521334884684-d80222895322?w=400',
-  'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?w=400',
-  'https://images.unsplash.com/photo-1459156212016-c812468e2115?w=400',
-].map((uri, index) => ({ id: `${index}`, uri }));
+import { spacing } from '../../../theme';
+import { IconButton } from '../IconButton/IconButton';
+import { PlantCard } from '../PlantCard/PlantCard';
+import { PlantGallery } from './index';
 
 const meta = {
-  title: 'UI/PhotoGrid',
-  component: PhotoGrid,
-  args: {
-    images,
-  },
-} satisfies Meta<typeof PhotoGrid>;
+  title: 'Spec/PlantGallery',
+  component: PlantGallery,
+} satisfies Meta<typeof PlantGallery>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const ThreeColumns: Story = {};
+const cards = [
+  require('../../../assets/start/start-grid-01.jpg'),
+  require('../../../assets/start/start-grid-02.jpg'),
+  require('../../../assets/start/start-grid-03.jpg'),
+  require('../../../assets/start/start-grid-04.jpg'),
+  require('../../../assets/start/start-grid-05.jpg'),
+  require('../../../assets/start/start-grid-06.jpg'),
+  require('../../../assets/start/start-grid-07.jpg'),
+  require('../../../assets/start/start-grid-08.jpg'),
+  require('../../../assets/start/start-grid-09.jpg'),
+];
 
-export const TwoRowsTall: Story = {
-  args: {
-    columns: 3,
-    itemAspectRatio: 0.72,
-    images: images.slice(0, 4),
+function Plant({ i }: { i: number }) {
+  return <PlantCard image={cards[i]} plantId={`${i + 1}`} />;
+}
+
+export const A_All: Story = {
+  name: 'All',
+  args: {} as never,
+  render: () => <InteractiveGridDemo />,
+};
+
+export const B_OneColumn: Story = {
+  name: 'One column',
+  args: {} as never,
+  render: () => (
+    <PlantGallery>
+      <Plant i={0} />
+    </PlantGallery>
+  ),
+};
+
+export const C_TwoColumns: Story = {
+  name: 'Two columns',
+  args: {} as never,
+  render: () => (
+    <PlantGallery>
+      <Plant i={0} />
+      <Plant i={1} />
+      <Plant i={2} />
+    </PlantGallery>
+  ),
+};
+
+export const D_ThreeColumns: Story = {
+  name: 'Three columns',
+  args: {} as never,
+  render: () => (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <PlantGallery>
+        <Plant i={0} />
+        <Plant i={1} />
+        <Plant i={2} />
+        <Plant i={3} />
+        <Plant i={4} />
+        <Plant i={5} />
+        <Plant i={6} />
+        <Plant i={7} />
+        <Plant i={8} />
+      </PlantGallery>
+    </ScrollView>
+  ),
+};
+
+const styles = StyleSheet.create({
+  block: {
+    marginBottom: spacing.xl,
   },
-};
+  controls: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  scrollContent: {
+    gap: spacing.md,
+    paddingBottom: spacing.md,
+  },
+});
 
-export const SingleRow: Story = {
-  render: () => <PhotoRow image={images[0]} />,
-};
+function InteractiveGridDemo() {
+  const [count, setCount] = React.useState(1);
+  const maxCount = 50;
+
+  return (
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      <View style={styles.controls}>
+        <IconButton
+          icon="minus"
+          onPress={() => setCount(prev => Math.max(1, prev - 1))}
+          variant="secondary"
+        />
+        <IconButton
+          icon="plus"
+          onPress={() => setCount(prev => Math.min(maxCount, prev + 1))}
+          variant="secondary"
+        />
+      </View>
+      <PlantGallery randomSeed={17}>
+        {Array.from({ length: count }, (_, i) => (
+          <Plant key={`plant-${i}`} i={i % cards.length} />
+        ))}
+      </PlantGallery>
+    </ScrollView>
+  );
+}

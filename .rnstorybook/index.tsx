@@ -6,6 +6,7 @@ import { name as appName } from '../app.json';
 import { view } from './storybook.requires';
 
 const StorybookUIRoot = view.getStorybookUI({
+  shouldPersistSelection: true,
   storage: {
     getItem: AsyncStorage.getItem,
     setItem: AsyncStorage.setItem,

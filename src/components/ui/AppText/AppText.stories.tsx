@@ -6,7 +6,7 @@ import { spacing } from '../../../theme';
 import { AppText } from './AppText';
 
 const meta = {
-  title: 'UI/AppText',
+  title: 'Spec/AppText',
   component: AppText,
   args: {
     children: 'Plant Situation',
@@ -17,15 +17,57 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Variants: Story = {
+export const H1: Story = {
+  args: {
+    children: 'Plant Situation',
+    variant: 'h1',
+  },
+};
+
+export const H2: Story = {
+  args: {
+    children: 'Keep something alive',
+    variant: 'h2',
+  },
+};
+
+export const H3: Story = {
+  args: {
+    children: 'ZZ plant',
+    variant: 'h3',
+  },
+};
+
+export const Body: Story = {
+  args: {
+    children: 'Likes bright indirect light and mild neglect.',
+    variant: 'body',
+  },
+};
+
+export const BodyHighlight: Story = {
+  args: {
+    children: 'Water every 14 days',
+    variant: 'bodyHighlight',
+  },
+};
+
+export const Small: Story = {
+  args: {
+    children: '15 May',
+    variant: 'small',
+  },
+};
+
+export const All: Story = {
   render: () => (
     <View style={styles.stack}>
-      <AppText variant="hero">Plant Situation</AppText>
-      <AppText variant="headline">Keep something alive</AppText>
-      <AppText variant="title">ZZ plant</AppText>
-      <AppText variant="sectionTitle">Watering schedule</AppText>
+      <AppText variant="h1">Plant Situation</AppText>
+      <AppText variant="h2">Keep something alive</AppText>
+      <AppText variant="h3">ZZ plant</AppText>
       <AppText variant="body">Likes bright indirect light and mild neglect.</AppText>
-      <AppText variant="caption">15 May</AppText>
+      <AppText variant="bodyHighlight">Water every 14 days</AppText>
+      <AppText variant="small">15 May</AppText>
     </View>
   ),
 };

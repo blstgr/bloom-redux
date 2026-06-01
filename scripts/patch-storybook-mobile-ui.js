@@ -33,7 +33,17 @@ const after = `if (open) {
 \t\t} else {`;
 
 if (!source.includes(before) || source.includes('setTimeout(() => {\n\t\t\t\tmenuBottomSheetRef.current?.snapToIndex(1);')) {
-  process.exit(0);
+  // Continue; we may still need to apply backdrop behavior patch.
 }
 
-fs.writeFileSync(filePath, source.replace(before, after));
+let next = source;
+
+if (source.includes(before) && !source.includes('setTimeout(() => {\n\t\t\t\tmenuBottomSheetRef.current?.snapToIndex(1);')) {
+  next = next.replace(before, after);
+}
+
+next = next.replace('pressBehavior: "close"', 'pressBehavior: "none"');
+
+if (next !== source) {
+  fs.writeFileSync(filePath, next);
+}

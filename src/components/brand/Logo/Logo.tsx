@@ -1,7 +1,7 @@
 import React from 'react';
 import Svg, { G, Path } from 'react-native-svg';
 
-import { colors } from '../../../theme';
+import { colors, sizes } from '../../../theme';
 
 export type LogoProps = {
   color?: string;
@@ -11,13 +11,13 @@ export type LogoProps = {
 
 const dimensions = {
   logo: {
-    width: 225,
-    height: 53,
+    width: sizes.logo.fullWidth,
+    height: sizes.logo.fullHeight,
     viewBox: '0 0 225.759 53.6',
   },
   symbol: {
-    width: 61,
-    height: 53,
+    width: sizes.logo.symbolWidth,
+    height: sizes.logo.symbolHeight,
     viewBox: '0 0 61.4961 53.6',
   },
 } as const;

@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   base: {
     alignItems: 'center',
     borderRadius: radii.pill,
-    borderWidth: 1,
+    borderWidth: sizes.border.thin,
     justifyContent: 'center',
     overflow: 'hidden',
     ...shadows.soft,

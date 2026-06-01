@@ -10,6 +10,7 @@ export const colors = {
     primary: '#2E2B28',
     secondary: '#548A5C',
     muted: '#708C63',
+    placeholder: '#B9C7B2',
     inverse: '#FFFFFF',
     dark: '#1F2024',
   },
@@ -25,10 +26,12 @@ export const colors = {
     glassSubtle: 'rgba(255, 255, 255, 0.05)',
     dark: '#2E2B28',
     plantPlaceholder: '#C2C8CA',
+    overlay: 'rgba(0,0,0,0.2)',
   },
   border: {
     white: '#FFFFFF',
     glass: 'rgba(255, 255, 255, 0.6)',
+    glassSoft: 'rgba(255, 255, 255, 0.4)',
   },
   action: {
     primary: '#2E2B28',
@@ -40,6 +43,11 @@ export const colors = {
     primary: '#2E2B28',
     inverse: '#FFFFFF',
     green: '#548A5C',
+  },
+  overlay: {
+    dark18: 'rgba(46, 43, 40, 0.18)',
+    light45: 'rgba(255, 255, 255, 0.45)',
+    glass20: 'rgba(255, 255, 255, 0.2)',
   },
 } as const;
 

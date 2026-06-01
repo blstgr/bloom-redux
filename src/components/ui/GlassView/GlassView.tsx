@@ -2,7 +2,7 @@ import { BlurView } from '@react-native-community/blur';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radii, shadows } from '../../../theme';
+import { colors, radii, shadows, sizes } from '../../../theme';
 
 export type GlassViewProps = {
   children?: React.ReactNode;
@@ -14,7 +14,7 @@ export function GlassView({ children, radius = radii.pill, style }: GlassViewPro
   return (
     <View style={[styles.container, { borderRadius: radius }, style]}>
       <BlurView
-        blurAmount={8}
+        blurAmount={4}
         blurType="light"
         reducedTransparencyFallbackColor={colors.surface.glassLight}
         style={StyleSheet.absoluteFill}
@@ -28,20 +28,20 @@ export function GlassView({ children, radius = radii.pill, style }: GlassViewPro
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface.glassLight,
+    backgroundColor: colors.overlay.glass20,
     borderColor: colors.border.white,
-    borderWidth: 1,
+    borderWidth: sizes.border.thin,
     overflow: 'hidden',
     ...shadows.soft,
   },
   tint: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.surface.glassLight,
+    backgroundColor: colors.overlay.glass20,
   },
   highlight: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.surface.glassSubtle,
-    borderColor: colors.border.glass,
-    borderWidth: 1,
+    backgroundColor: 'transparent',
+    borderColor: colors.border.glassSoft,
+    borderWidth: sizes.border.thin,
   },
 });

@@ -6,7 +6,7 @@ import { startGridImages } from '../../../assets/start';
 import { radii, spacing } from '../../../theme';
 
 const meta = {
-  title: 'Brand/Start Screen Assets',
+  title: 'Screens/StartScreenAssets',
 } satisfies Meta;
 
 export default meta;
