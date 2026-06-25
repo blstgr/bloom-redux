@@ -11,6 +11,7 @@
     "report:jira": "python3 jira-report/jira-report.py",
     "start": "react-native start",
     "storybook-generate": "sb-rn-get-stories",
+    "storybook:android": "STORYBOOK_ENABLED=true react-native run-android",
     "storybook:ios": "STORYBOOK_ENABLED=true react-native run-ios",
     "storybook:start": "STORYBOOK_ENABLED=true react-native start",
     "test": "jest --watchman=false"

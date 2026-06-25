@@ -32,13 +32,14 @@ export function SettingsPanel({ onLogoutPress, rows }: SettingsPanelProps) {
 const styles = StyleSheet.create({
   border: {
     ...shadows.soft,
+    backgroundColor: colors.surface.glass,
     borderColor: colors.border.glass,
     borderRadius: radii.xxl,
     borderWidth: sizes.border.thin,
     width: '100%',
   },
   inner: {
-    backgroundColor: colors.surface.white,
+    backgroundColor: 'transparent',
     borderRadius: radii.xxl - sizes.border.thin,
     gap: spacing.xxs,
     overflow: 'hidden',

@@ -8,29 +8,38 @@ import { GradientBorder } from '../GradientBorder';
 export type GlassViewProps = {
   border?: boolean;
   children?: React.ReactNode;
+  containerColor?: string;
   radius?: number;
   style?: StyleProp<ViewStyle>;
+  tintColor?: string;
 };
 
 const GLASS_BORDER_COLORS = ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.7)'];
 
-export function GlassView({ border = true, children, radius = radii.pill, style }: GlassViewProps) {
+export function GlassView({
+  border = true,
+  children,
+  containerColor = colors.overlay.glass,
+  radius = radii.pill,
+  style,
+  tintColor = colors.overlay.glass,
+}: GlassViewProps) {
   const blurAndTint = (
     <>
       <BlurView
         blurAmount={4}
         blurType="light"
-        reducedTransparencyFallbackColor={colors.overlay.glass}
+        reducedTransparencyFallbackColor={tintColor}
         style={StyleSheet.absoluteFill}
       />
-      <View style={styles.tint} />
+      <View style={[styles.tint, { backgroundColor: tintColor }]} />
       {children}
     </>
   );
 
   if (!border) {
     return (
-      <View style={[styles.borderless, style]}>
+      <View style={[styles.borderless, { backgroundColor: containerColor }, style]}>
         {blurAndTint}
       </View>
     );
@@ -49,11 +58,9 @@ export function GlassView({ border = true, children, radius = radii.pill, style 
 
 const styles = StyleSheet.create({
   borderless: {
-    backgroundColor: colors.overlay.glass,
     overflow: 'hidden',
   },
   tint: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlay.glass,
   },
 });

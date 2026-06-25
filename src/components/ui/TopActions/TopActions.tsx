@@ -4,34 +4,75 @@ import { type ReactNode } from 'react';
 
 import { AppText } from '../AppText';
 import { sizes, spacing } from '../../../theme';
+import { Button } from '../Button';
+import type { IconName } from '../Icon';
 
 export type TopActionsProps = {
   mode?: 'centered' | 'hero';
   leftAction?: ReactNode;
+  leftIcon?: IconName;
+  onClose?: () => void;
+  onLeftPress?: () => void;
+  onMore?: () => void;
+  onRightPress?: () => void;
   rightAction?: ReactNode;
+  rightIcon?: IconName;
   style?: StyleProp<ViewStyle>;
   title?: ReactNode;
 };
 
-export function TopActions({ leftAction, mode = 'centered', rightAction, style, title }: TopActionsProps) {
+const TOP_ACTION_BACKGROUND_OPACITY = 0.2;
+
+function renderAction(action: ReactNode, icon: IconName | undefined, onPress: (() => void) | undefined) {
+  if (action) return action;
+  if (!icon) return null;
+
+  return (
+    <Button
+      icon={icon}
+      iconOnly
+      onPress={onPress}
+      secondaryBackgroundOpacity={TOP_ACTION_BACKGROUND_OPACITY}
+      size="small"
+      variant="secondary"
+    />
+  );
+}
+
+export function TopActions({
+  leftAction,
+  leftIcon,
+  mode = 'centered',
+  onClose,
+  onLeftPress,
+  onMore,
+  onRightPress,
+  rightAction,
+  rightIcon,
+  style,
+  title,
+}: TopActionsProps) {
+  const resolvedLeftAction = renderAction(leftAction, leftIcon ?? (onClose ? 'close' : undefined), onLeftPress ?? onClose);
+  const resolvedRightAction = renderAction(rightAction, rightIcon ?? (onMore ? 'more' : undefined), onRightPress ?? onMore);
+
   if (mode === 'hero') {
     return (
       <View style={[styles.heroContainer, style]}>
         <View style={styles.heroTitleWrap}>
           {typeof title === 'string' ? <AppText variant="titleXl">{title}</AppText> : title}
         </View>
-        <View style={styles.side}>{rightAction}</View>
+        <View style={styles.side}>{resolvedRightAction}</View>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, style]}>
-      <View style={styles.side}>{leftAction}</View>
+      <View style={styles.side}>{resolvedLeftAction}</View>
       <View style={styles.titleWrap}>
         {typeof title === 'string' ? <AppText variant="titleS">{title}</AppText> : title}
       </View>
-      <View style={styles.side}>{rightAction}</View>
+      <View style={styles.side}>{resolvedRightAction}</View>
     </View>
   );
 }

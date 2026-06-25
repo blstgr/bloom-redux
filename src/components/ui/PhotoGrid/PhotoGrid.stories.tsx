@@ -3,7 +3,6 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { spacing } from '../../../theme';
-import { Button } from '../Button';
 import { PlantCard } from '../PlantCard/PlantCard';
 import { TopActions } from '../TopActions';
 import { PhotoGrid } from './index';
@@ -95,24 +94,10 @@ function InteractiveGridDemo() {
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <TopActions
-        leftAction={
-          <Button
-            icon="minus"
-            iconOnly
-            size="small"
-            variant="secondary"
-            onPress={() => setCount(prev => Math.max(1, prev - 1))}
-          />
-        }
-        rightAction={
-          <Button
-            icon="plus"
-            iconOnly
-            size="small"
-            variant="secondary"
-            onPress={() => setCount(prev => Math.min(maxCount, prev + 1))}
-          />
-        }
+        leftIcon="minus"
+        onLeftPress={() => setCount(prev => Math.max(1, prev - 1))}
+        onRightPress={() => setCount(prev => Math.min(maxCount, prev + 1))}
+        rightIcon="plus"
       />
       <PhotoGrid randomSeed={17}>
         {Array.from({ length: count }, (_, i) => (

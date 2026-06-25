@@ -22,4 +22,9 @@ const config = {
   },
 };
 
-module.exports = withStorybook(mergeConfig(defaultConfig, config));
+module.exports = withStorybook(mergeConfig(defaultConfig, config), {
+  websockets: {
+    host: 'localhost',
+    port: 7007,
+  },
+});

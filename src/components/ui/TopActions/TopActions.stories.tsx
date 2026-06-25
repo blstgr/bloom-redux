@@ -4,7 +4,6 @@ import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../theme';
 import { AppText } from '../AppText';
-import { Button } from '../Button';
 import { EditableTitle } from '../EditableTitle';
 import { TopActions } from './TopActions';
 
@@ -16,58 +15,59 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const close = <Button icon="close" iconOnly size="small" variant="secondary" />;
-const more = <Button icon="more" iconOnly size="small" variant="secondary" />;
-
 export const Default: Story = {
-  render: () => <TopActions leftAction={close} rightAction={more} />,
+  render: () => <TopActions leftIcon="close" rightIcon="more" />,
 };
 
 export const WithTitle: Story = {
-  render: () => <TopActions leftAction={close} rightAction={more} title={<AppText variant="titleM">Plant</AppText>} />,
+  render: () => <TopActions leftIcon="close" rightIcon="more" title={<AppText variant="titleM">Plant</AppText>} />,
 };
 
 export const WithEditableTitle: Story = {
-  render: () => {
-    const [value, setValue] = React.useState('ZZ plant');
-    return (
-      <TopActions
-        leftAction={close}
-        rightAction={more}
-        title={<EditableTitle value={value} onChange={setValue} />}
-      />
-    );
-  },
+  render: () => <WithEditableTitleDemo />,
 };
 
 export const OnlyRightAction: Story = {
-  render: () => <TopActions rightAction={more} />,
+  render: () => <TopActions rightIcon="more" />,
 };
 
 export const OnlyLeftAction: Story = {
-  render: () => <TopActions leftAction={close} />,
+  render: () => <TopActions leftIcon="close" />,
 };
 
 export const Hero: Story = {
   render: () => (
-    <TopActions mode="hero" rightAction={more} title={<AppText variant="titleXl">Plant</AppText>} />
+    <TopActions mode="hero" rightIcon="more" title={<AppText variant="titleXl">Plant</AppText>} />
   ),
 };
 
 export const All: Story = {
-  render: () => {
-    const [value, setValue] = React.useState('ZZ plant');
-    return (
-      <View style={styles.stack}>
-        <TopActions leftAction={close} rightAction={more} />
-        <TopActions leftAction={close} rightAction={more} title={<AppText variant="titleM">Plant</AppText>} />
-        <TopActions leftAction={close} rightAction={more} title={<EditableTitle value={value} onChange={setValue} />} />
-        <TopActions rightAction={more} />
-        <TopActions leftAction={close} />
-        <TopActions mode="hero" rightAction={more} title={<AppText variant="titleXl">Plant</AppText>} />
-      </View>
-    );
-  },
+  render: () => <AllDemo />,
 };
+
+function WithEditableTitleDemo() {
+  const [value, setValue] = React.useState('ZZ plant');
+  return (
+    <TopActions
+      leftIcon="close"
+      rightIcon="more"
+      title={<EditableTitle value={value} onChange={setValue} />}
+    />
+  );
+}
+
+function AllDemo() {
+  const [value, setValue] = React.useState('ZZ plant');
+  return (
+    <View style={styles.stack}>
+      <TopActions leftIcon="close" rightIcon="more" />
+      <TopActions leftIcon="close" rightIcon="more" title={<AppText variant="titleM">Plant</AppText>} />
+      <TopActions leftIcon="close" rightIcon="more" title={<EditableTitle value={value} onChange={setValue} />} />
+      <TopActions rightIcon="more" />
+      <TopActions leftIcon="close" />
+      <TopActions mode="hero" rightIcon="more" title={<AppText variant="titleXl">Plant</AppText>} />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({ stack: { gap: spacing.xl } });
