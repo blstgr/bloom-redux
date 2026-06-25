@@ -122,6 +122,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: colors.surface.white,
     borderRadius: radii.pill,
+    overflow: 'hidden',
     position: 'relative',
     ...shadows.soft,
   },

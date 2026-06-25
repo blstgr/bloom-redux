@@ -14,6 +14,7 @@
     "storybook:android": "STORYBOOK_ENABLED=true react-native run-android",
     "storybook:ios": "STORYBOOK_ENABLED=true react-native run-ios",
     "storybook:start": "STORYBOOK_ENABLED=true react-native start",
+    "storybook:sync": "bash scripts/storybook-sync.sh",
     "test": "jest --watchman=false"
   },
   "dependencies": {

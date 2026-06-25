@@ -38,26 +38,28 @@ export function Input({
         {labelIcon ? <Icon name={labelIcon} /> : null}
         <AppText variant="titleS">{label}</AppText>
       </View>
-      <TextInput
-        editable={!disabled}
-        keyboardType={type === 'number' ? 'numeric' : type === 'email' ? 'email-address' : 'default'}
-        onBlur={() => {
-          setIsFocused(false);
-          onBlur?.();
-        }}
-        onChangeText={onChangeText}
-        onFocus={() => setIsFocused(true)}
-        placeholder={placeholder}
-        placeholderTextColor={colors.text.placeholder}
-        secureTextEntry={type === 'password'}
-        style={[
-          styles.input,
-          isFocused && styles.inputFocused,
-          disabled && styles.inputDisabled,
-          Boolean(error) && styles.inputError,
-        ]}
-        value={value}
-      />
+      <View style={[styles.inputWrapper, isFocused && styles.inputWrapperFocused]}>
+        <TextInput
+          editable={!disabled}
+          keyboardType={type === 'number' ? 'numeric' : type === 'email' ? 'email-address' : 'default'}
+          onBlur={() => {
+            setIsFocused(false);
+            onBlur?.();
+          }}
+          onChangeText={onChangeText}
+          onFocus={() => setIsFocused(true)}
+          placeholder={placeholder}
+          placeholderTextColor={colors.text.placeholder}
+          secureTextEntry={type === 'password'}
+          style={[
+            styles.input,
+            isFocused && styles.inputFocused,
+            disabled && styles.inputDisabled,
+            Boolean(error) && styles.inputError,
+          ]}
+          value={value}
+        />
+      </View>
       {error ? (
         <AppText variant="body" style={styles.errorText}>
           {error}
@@ -80,6 +82,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xxs,
   },
+  inputWrapper: {
+    borderRadius: radii.pill,
+  },
+  inputWrapperFocused: {
+    ...shadows.soft,
+  },
   input: {
     borderColor: colors.text.placeholder,
     borderRadius: radii.pill,
@@ -99,6 +107,5 @@ const styles = StyleSheet.create({
   inputFocused: {
     backgroundColor: colors.surface.white,
     borderColor: colors.text.placeholder,
-    ...shadows.soft,
   },
 });

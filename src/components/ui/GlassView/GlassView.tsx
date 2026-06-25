@@ -9,6 +9,7 @@ export type GlassViewProps = {
   border?: boolean;
   children?: React.ReactNode;
   containerColor?: string;
+  fallbackColor?: string;
   radius?: number;
   style?: StyleProp<ViewStyle>;
   tintColor?: string;
@@ -20,6 +21,7 @@ export function GlassView({
   border = true,
   children,
   containerColor = colors.overlay.glass,
+  fallbackColor = colors.surface.white,
   radius = radii.pill,
   style,
   tintColor = colors.overlay.glass,
@@ -29,7 +31,7 @@ export function GlassView({
       <BlurView
         blurAmount={4}
         blurType="light"
-        reducedTransparencyFallbackColor={tintColor}
+        reducedTransparencyFallbackColor={fallbackColor}
         style={StyleSheet.absoluteFill}
       />
       <View style={[styles.tint, { backgroundColor: tintColor }]} />

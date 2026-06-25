@@ -98,12 +98,12 @@ export function WateringSlider({
   );
 
   return (
+    <View style={[styles.trackShadow, { width: sliderWidth }]}>
     <View
       accessibilityRole="button"
       accessibilityState={{ checked: activeState === 'completed', disabled }}
       style={[
         styles.track,
-        { width: sliderWidth },
         activeState === 'completed' && styles.completedTrack,
       ]}
       {...(state == null ? panResponder.panHandlers : undefined)}>
@@ -116,6 +116,7 @@ export function WateringSlider({
         ]}>
         <Icon name={activeState === 'completed' ? 'check' : 'water'} color={colors.icon.inverse} />
       </View>
+    </View>
     </View>
   );
 }
@@ -140,6 +141,10 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.lg,
     width: sizes.button.default,
   },
+  trackShadow: {
+    borderRadius: radii.pill,
+    ...shadows.soft,
+  },
   track: {
     alignItems: 'flex-end',
     backgroundColor: colors.surface.glass,
@@ -149,6 +154,6 @@ const styles = StyleSheet.create({
     height: sizes.button.default,
     justifyContent: 'center',
     overflow: 'hidden',
-    ...shadows.soft,
+    width: '100%',
   },
 });
