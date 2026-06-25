@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../../theme';
-import { IconButton } from '../../../../components/ui/IconButton';
+import { Button } from '../../../../components/ui/Button';
 import { WateringCard } from './WateringCard';
 
 const meta = {
@@ -29,12 +29,7 @@ export const Default: Story = {
         <View style={styles.stack}>
           <View style={styles.topRow}>
             {!visible ? (
-              <IconButton
-                icon="repeat"
-                onPress={() => setVisible(true)}
-                size="sm"
-                variant="secondary"
-              />
+              <Button icon="repeat" iconOnly onPress={() => setVisible(true)} size="small" variant="secondary" />
             ) : null}
           </View>
 

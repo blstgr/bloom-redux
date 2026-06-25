@@ -1,26 +1,30 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
+import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../theme';
 import { Button } from '../Button';
-import { NavBar as NavBarComponent } from '../NavBar';
+import { NavBar as NavBarComponent, type NavItem } from '../NavBar';
+import { WateringSlider } from '../../../features/watering/components/WateringSlider';
 import { BottomActions } from './BottomActions';
 
-const navItems = [
-  { key: 'home', icon: 'home' as const },
-  { key: 'watering', icon: 'water' as const, badgeCount: 3 },
+// Tab-only nav: home + water
+const tabItems: NavItem[] = [
+  { key: 'home',     icon: 'home',  behavior: 'tab' },
+  { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3 },
 ];
 
-const navItemsWithRoute = [
-  { key: 'home', icon: 'home' as const },
-  { key: 'camera', icon: 'plus' as const, behavior: 'route' as const },
-  { key: 'watering', icon: 'water' as const, badgeCount: 3 },
-];
-
-const navItemsWithSubmit = [
-  { key: 'camera', icon: 'camera' as const, behavior: 'route' as const },
-  { key: 'save', icon: 'check' as const, behavior: 'submit' as const },
-];
+// Tabs respond to taps; clicking the active tab deselects it.
+function InteractiveNavBar({ items, initialKey }: { items: NavItem[]; initialKey?: string }) {
+  const [activeKey, setActiveKey] = React.useState<string | undefined>(initialKey);
+  const interactive = items.map(item => ({
+    ...item,
+    onPress: item.behavior === 'tab'
+      ? () => setActiveKey(prev => prev === item.key ? undefined : item.key)
+      : item.onPress,
+  }));
+  return <NavBarComponent activeKey={activeKey} items={interactive} />;
+}
 
 const meta = {
   title: 'Spec/BottomActions',
@@ -34,27 +38,32 @@ export const _01_All: Story = {
   name: 'All',
   render: () => (
     <View style={styles.stack}>
-      <BottomActions bottomBar={<Button icon="circle" label={undefined} preset="cameraShutter" variant="primary" />} />
-      <BottomActions bottomBar={<NavBarComponent activeKey="home" items={navItems} />} />
-      <BottomActions bottomBar={<NavBarComponent activeKey="home" items={navItemsWithRoute} />} />
-      <BottomActions bottomBar={<NavBarComponent items={navItemsWithSubmit} />} />
+      <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={52} variant="primary" />} />
+      <BottomActions bottomBar={<WateringSlider />} />
+      <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
     </View>
   ),
 };
 
-export const _02_ActionButton: Story = {
-  name: 'Action Button',
-  render: () => <BottomActions bottomBar={<Button icon="circle" label={undefined} preset="cameraShutter" variant="primary" />} />,
+export const _02_Action: Story = {
+  name: 'Action',
+  render: () => (
+    <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={52} variant="primary" />} />
+  ),
 };
 
-export const _03_ActionBar: Story = {
-  name: 'Action Bar',
-  render: () => <BottomActions bottomBar={<NavBarComponent items={navItemsWithSubmit} />} />,
+export const _03_Slider: Story = {
+  name: 'Slider',
+  render: () => (
+    <BottomActions bottomBar={<WateringSlider />} />
+  ),
 };
 
 export const _04_NavBar: Story = {
   name: 'Nav Bar',
-  render: () => <BottomActions bottomBar={<NavBarComponent activeKey="home" items={navItemsWithRoute} />} />,
+  render: () => (
+    <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
+  ),
 };
 
 const styles = StyleSheet.create({ stack: { gap: spacing.xl } });

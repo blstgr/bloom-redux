@@ -2,6 +2,11 @@ import React from 'react';
 import { PanResponder, StyleSheet, useWindowDimensions, View } from 'react-native';
 
 import { colors, radii, shadows, sizes, spacing } from '../../../../theme';
+
+const SLIDER_MAX_WIDTH = 329;
+const SLIDER_PROGRESS_WIDTH = 116;
+const COMPLETE_THRESHOLD_OFFSET = 2;
+
 import { GlassView } from '../../../../components/ui/GlassView';
 import { Icon } from '../../../../components/ui/Icon';
 
@@ -18,18 +23,16 @@ export function WateringSlider({
   onComplete,
   state,
 }: WateringSliderProps) {
-  const maxSliderWidth = sizes.watering.sliderMaxWidth;
-  const progressThumbWidth = sizes.watering.sliderProgressWidth;
   const { width } = useWindowDimensions();
-  const sliderWidth = Math.min(width - spacing.xxl * 2, maxSliderWidth);
-  const minThumbWidth = sizes.button.normal;
+  const sliderWidth = Math.min(width - spacing.xxl * 2, SLIDER_MAX_WIDTH);
+  const minThumbWidth = sizes.button.default;
   // Keep a small epsilon so reaching the visual end reliably counts as completed.
-  const completedThreshold = sliderWidth - sizes.watering.completeThresholdOffset;
+  const completedThreshold = sliderWidth - COMPLETE_THRESHOLD_OFFSET;
 
   const [internalState, setInternalState] = React.useState<WateringSliderState>('default');
-  const [dragWidth, setDragWidth] = React.useState(minThumbWidth);
-  const dragStartWidthRef = React.useRef(minThumbWidth);
-  const currentWidthRef = React.useRef(minThumbWidth);
+  const [dragWidth, setDragWidth] = React.useState<number>(minThumbWidth);
+  const dragStartWidthRef = React.useRef<number>(minThumbWidth);
+  const currentWidthRef = React.useRef<number>(minThumbWidth);
 
   const activeState = state ?? internalState;
 
@@ -40,8 +43,8 @@ export function WateringSlider({
       return;
     }
     if (state === 'progress') {
-      setDragWidth(progressThumbWidth);
-      currentWidthRef.current = progressThumbWidth;
+      setDragWidth(SLIDER_PROGRESS_WIDTH);
+      currentWidthRef.current = SLIDER_PROGRESS_WIDTH;
       return;
     }
     if (state === 'completed') {
@@ -57,7 +60,7 @@ export function WateringSlider({
       setDragWidth(minThumbWidth);
       currentWidthRef.current = minThumbWidth;
     }
-  }, [internalState, minThumbWidth, progressThumbWidth, sliderWidth, state]);
+  }, [internalState, minThumbWidth, sliderWidth, state]);
 
   const panResponder = React.useMemo(
     () =>
@@ -104,7 +107,7 @@ export function WateringSlider({
         activeState === 'completed' && styles.completedTrack,
       ]}
       {...(state == null ? panResponder.panHandlers : undefined)}>
-      {activeState !== 'completed' ? <GlassView style={styles.blurLayer} /> : null}
+      {activeState !== 'completed' ? <GlassView border={false} style={styles.blurLayer} /> : null}
       <View
         style={[
           styles.thumb,
@@ -132,10 +135,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     backgroundColor: colors.action.primary,
     borderRadius: radii.pill,
-    height: sizes.button.normal,
+    height: sizes.button.default,
     justifyContent: 'center',
     paddingLeft: spacing.lg,
-    width: sizes.button.normal,
+    width: sizes.button.default,
   },
   track: {
     alignItems: 'flex-end',
@@ -143,7 +146,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border.white,
     borderRadius: radii.pill,
     borderWidth: sizes.border.thin,
-    height: sizes.button.normal,
+    height: sizes.button.default,
     justifyContent: 'center',
     overflow: 'hidden',
     ...shadows.soft,

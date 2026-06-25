@@ -11,7 +11,7 @@ export type LoaderProps = {
 
 export function Loader({ overlay = false, size = 'default', tone = 'onDark' }: LoaderProps) {
   const color = tone === 'onLight' ? colors.icon.primary : colors.icon.inverse;
-  const boxSize = size === 'small' ? spacing.xxl : sizes.button.normal;
+  const boxSize = size === 'small' ? spacing.xxl : sizes.button.default;
   const spinnerSize = size === 'small' ? 'small' : 'large';
 
   return (
@@ -32,11 +32,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   overlayDark: {
-    backgroundColor: colors.overlay.dark18,
+    backgroundColor: colors.overlay.dim,
     borderRadius: radii.pill,
   },
   overlayLight: {
-    backgroundColor: colors.overlay.light45,
+    backgroundColor: colors.overlay.frost,
     borderRadius: radii.pill,
   },
 });

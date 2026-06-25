@@ -1,15 +1,22 @@
 import React from 'react';
 import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 
-import { radii, sizes, spacing } from '../../../theme';
+import { radii, spacing } from '../../../theme';
 import { Badge } from '../Badge';
 import { BadgePill } from '../BadgePill/BadgePill';
 
+const PLANT_CARD_HEIGHT = 130;
+
+export type PlantCardBadge = {
+  icon?: 'water';
+  label?: string;
+  type: 'badge' | 'pill';
+};
+
 export type PlantCardProps = {
-  badge?: { icon?: 'water'; label?: string; variant: 'badge' | 'badgePill' };
+  badge?: PlantCardBadge;
   image: ImageSourcePropType;
   onPress?: () => void;
-  plantId: string;
 };
 
 export function PlantCard({ badge, image, onPress }: PlantCardProps) {
@@ -18,11 +25,10 @@ export function PlantCard({ badge, image, onPress }: PlantCardProps) {
       <Image source={image} style={styles.image} />
       {badge ? (
         <View style={styles.badge}>
-          {badge.variant === 'badge' ? (
+          {badge.type === 'badge' ? (
             <Badge icon={badge.icon ?? 'water'} variant="inverted" />
           ) : (
             <BadgePill
-              badgeVariant="light"
               icon={badge.icon ?? 'water'}
               label={badge.label ?? '15 May'}
               variant="inverted"
@@ -42,7 +48,7 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: radii.xxl,
-    height: sizes.card.plantHeight,
+    height: PLANT_CARD_HEIGHT,
     overflow: 'hidden',
     width: '100%',
   },

@@ -23,6 +23,8 @@ export type SettingsRowProps = {
   editable?: boolean;
   label?: string;
   onPress?: () => void;
+  onSave?: (value: string) => void;
+  onSaveFields?: (values: string[]) => void;
   secure?: boolean;
   value?: string;
   variant: SettingsRowVariant;
@@ -34,34 +36,49 @@ export function SettingsRow({
   editable = false,
   label,
   onPress,
+  onSave,
+  onSaveFields,
   secure = false,
   value = '',
   variant,
 }: SettingsRowProps) {
   const [isEditing, setIsEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
-  const [fieldDrafts, setFieldDrafts] = React.useState<Array<string>>(
-    (editFields ?? []).map(field => field.value),
+  const [fieldDrafts, setFieldDrafts] = React.useState<string[]>(
+    (editFields ?? []).map(f => f.value),
   );
   const hasLabel = variant === 'textWithLabel' || variant === 'textWithLabelAndButton';
   const hasButton = variant === 'textWithLabelAndButton' || variant === 'buttonOnly';
   const hasMultiEditFields = Boolean(editFields && editFields.length > 1);
 
+  React.useEffect(() => { setDraft(value); }, [value]);
   React.useEffect(() => {
-    setDraft(value);
-  }, [value]);
-  React.useEffect(() => {
-    setFieldDrafts((editFields ?? []).map(field => field.value));
+    setFieldDrafts((editFields ?? []).map(f => f.value));
   }, [editFields]);
 
   const displayValue = React.useMemo(() => {
     if (!secure || isEditing) return value;
     if ((label ?? '').toLowerCase().includes('api key')) {
-      const last4 = value.slice(-4);
-      return `***${last4}`;
+      return `${'•'.repeat(Math.max(0, value.length - 4))}${value.slice(-4)}`;
     }
-    return value.replace(/./g, '*');
+    return value.replace(/./g, '•');
   }, [isEditing, label, secure, value]);
+
+  const handleSaveOrEdit = () => {
+    if (editable) {
+      if (isEditing) {
+        if (hasMultiEditFields) {
+          onSaveFields?.(fieldDrafts);
+        } else {
+          onSave?.(draft);
+        }
+        setIsEditing(false);
+      } else {
+        setIsEditing(true);
+      }
+    }
+    onPress?.();
+  };
 
   if (variant === 'buttonOnly') {
     return (
@@ -74,7 +91,7 @@ export function SettingsRow({
   return (
     <View style={styles.row}>
       <View style={styles.copy}>
-        {hasLabel && label && !isEditing ? <AppText variant="sectionTitle">{label}</AppText> : null}
+        {hasLabel && label && !isEditing ? <AppText variant="titleS">{label}</AppText> : null}
         {isEditing ? (
           hasMultiEditFields && editFields ? (
             <View style={styles.editFields}>
@@ -84,7 +101,7 @@ export function SettingsRow({
                   label={field.label}
                   onBlur={() => {}}
                   onChangeText={next =>
-                    setFieldDrafts(prev => prev.map((valueAtIndex, i) => (i === index ? next : valueAtIndex)))
+                    setFieldDrafts(prev => prev.map((v, i) => (i === index ? next : v)))
                   }
                   placeholder={field.placeholder}
                   type={field.type ?? 'text'}
@@ -110,16 +127,7 @@ export function SettingsRow({
         <Button
           label={isEditing ? 'Save' : buttonLabel}
           layout="hug"
-          onPress={() => {
-            if (editable) {
-              if (isEditing) {
-                setIsEditing(false);
-              } else {
-                setIsEditing(true);
-              }
-            }
-            onPress?.();
-          }}
+          onPress={handleSaveOrEdit}
           size="small"
           style={styles.actionButton}
           variant="secondary"
@@ -130,13 +138,13 @@ export function SettingsRow({
 }
 
 const styles = StyleSheet.create({
+  actionButton: {
+    alignSelf: 'flex-end',
+  },
   copy: {
     flex: 1,
     gap: spacing.xs,
     minWidth: 0,
-  },
-  actionButton: {
-    alignSelf: 'flex-end',
   },
   editFields: {
     gap: spacing.xs,

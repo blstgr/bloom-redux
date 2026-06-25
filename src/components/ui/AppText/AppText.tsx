@@ -1,23 +1,22 @@
 import React from 'react';
-import { StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
+import { Text, type TextProps, type TextStyle } from 'react-native';
 
 import { colors, typography } from '../../../theme';
 
 export type AppTextVariant =
-  | 'h1'
-  | 'h2'
-  | 'h3'
-  | 'bodyHighlight'
-  | 'small'
-  | 'hero'
-  | 'headline'
-  | 'title'
-  | 'sectionTitle'
+  // Titles — display font, 4 sizes
+  | 'titleXl'
+  | 'titleL'
+  | 'titleM'
+  | 'titleS'
+  // Body — 3 variations
   | 'body'
-  | 'button'
-  | 'caption';
+  | 'bodyHighlighted'
+  | 'bodyS'
+  // Utility
+  | 'button';
 
-export type AppTextTone = 'primary' | 'secondary' | 'muted' | 'inverse' | 'dark';
+export type AppTextTone = 'primary' | 'inverse' | 'placeholder';
 
 export type AppTextProps = TextProps & {
   align?: TextStyle['textAlign'];
@@ -34,15 +33,14 @@ export function AppText({
   variant = 'body',
   ...textProps
 }: AppTextProps) {
-  const resolvedVariant = variantMap[variant];
+  const typographyStyle = typography[variant];
+  const color = typographyStyle.color ?? colors.text[tone];
 
   return (
     <Text
       style={[
-        styles.base,
-        typography[resolvedVariant],
-        { color: colors.text[tone], textAlign: align },
-        variant === 'bodyHighlight' && styles.bodyHighlight,
+        typographyStyle,
+        { color, textAlign: align },
         style,
       ]}
       {...textProps}>
@@ -50,27 +48,3 @@ export function AppText({
     </Text>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    letterSpacing: 0,
-  },
-  bodyHighlight: {
-    fontFamily: typography.sectionTitle.fontFamily,
-  },
-});
-
-const variantMap: Record<AppTextVariant, keyof typeof typography> = {
-  h1: 'hero',
-  h2: 'headline',
-  h3: 'title',
-  body: 'body',
-  bodyHighlight: 'body',
-  small: 'small',
-  hero: 'hero',
-  headline: 'headline',
-  title: 'title',
-  sectionTitle: 'sectionTitle',
-  button: 'button',
-  caption: 'caption',
-};

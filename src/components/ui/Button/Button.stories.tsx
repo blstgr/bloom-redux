@@ -28,7 +28,7 @@ export const All: Story = {
         <Button label="Continue" layout="hug" variant="secondary" />
         <Button label="Continue" size="small" variant="secondary" />
         <Button icon="google" label="Continue with Google" layout="hug" variant="secondary" />
-        <Button icon="plus" label={undefined} variant="icon" />
+        <Button icon="plus" label={undefined} iconOnly />
         <Button icon="google" label="Continue with Google" layout="fill" />
         <Button label="Continue" layout="fill" loading variant="secondary" />
         <View style={styles.row}>
@@ -84,7 +84,7 @@ export const F_IconOnly: Story = {
   name: 'Icon only',
   render: () => (
     <View style={styles.stack}>
-      <Button icon="plus" label={undefined} variant="icon" />
+      <Button icon="plus" label={undefined} iconOnly />
     </View>
   ),
 };

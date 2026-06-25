@@ -3,8 +3,11 @@ import { Animated, Image, Pressable, StyleSheet, useWindowDimensions, View } fro
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 
-import { colors, radii, sizes, spacing } from '../../../../theme';
+import { colors, radii, spacing } from '../../../../theme';
 import { BadgePill } from '../../../../components/ui/BadgePill/BadgePill';
+
+const CARD_HEIGHT = 130;
+const CARD_MAX_WIDTH = 361;
 import { Icon } from '../../../../components/ui/Icon';
 
 export type WateringCardProps = {
@@ -22,9 +25,8 @@ export function WateringCard({
   onDismiss,
   onPress,
 }: WateringCardProps) {
-  const cardHeight = sizes.watering.cardHeight;
   const { width } = useWindowDimensions();
-  const cardWidth = Math.min(width - spacing.md * 2, sizes.watering.cardMaxWidth);
+  const cardWidth = Math.min(width - spacing.md * 2, CARD_MAX_WIDTH);
   const [dismissed, setDismissed] = React.useState(false);
   const collapse = React.useRef(new Animated.Value(1)).current;
   const revealWidth = cardWidth;
@@ -45,7 +47,7 @@ export function WateringCard({
     return (
       <Animated.View
         style={{
-          height: collapse.interpolate({ inputRange: [0, 1], outputRange: [0, cardHeight] }),
+          height: collapse.interpolate({ inputRange: [0, 1], outputRange: [0, CARD_HEIGHT] }),
           opacity: collapse,
           overflow: 'hidden',
         }}
@@ -117,7 +119,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.brand.green,
     borderRadius: radii.photo,
-    height: sizes.watering.cardHeight,
+    height: CARD_HEIGHT,
     overflow: 'hidden',
   },
   iconOverlay: {
@@ -125,16 +127,16 @@ const styles = StyleSheet.create({
     right: spacing.xl,
   },
   image: {
-    backgroundColor: colors.surface.plantPlaceholder,
+    backgroundColor: colors.surface.white,
     borderRadius: radii.photo,
-    height: sizes.watering.cardHeight,
+    height: CARD_HEIGHT,
     position: 'absolute',
   },
   reveal: {
     alignItems: 'flex-end',
     backgroundColor: colors.brand.green,
     bottom: spacing.none,
-    height: sizes.watering.cardHeight,
+    height: CARD_HEIGHT,
     justifyContent: 'center',
     paddingRight: spacing.xl,
   },

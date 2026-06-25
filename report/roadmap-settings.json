@@ -1,0 +1,24 @@
+{
+  "include": [
+    "ca switch"
+  ],
+  "exclude": [
+    "post release"
+  ],
+  "expected_tasks_per_week": {
+    "ca switch": 16.0,
+    "SSL automation - board improvements": 2.0
+  },
+  "output": "report/roadmap 2026.xlsx",
+  "drive_folder": "https://drive.google.com/drive/u/1/folders/1wtk5S9ZC83TQtjrOXEU-w4x_yObDcJl2",
+  "google_client_secrets": "/Users/apple/Documents/study/bloom/jira-report/app/google-oauth-client-secrets.json",
+  "local_only": true,
+  "last_generated_scope": {
+    "include": [
+      "ca switch"
+    ],
+    "exclude": [
+      "post release"
+    ]
+  }
+}

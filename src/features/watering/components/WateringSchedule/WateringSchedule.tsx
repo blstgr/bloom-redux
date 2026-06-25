@@ -26,7 +26,7 @@ export function WateringSchedule({
     <View style={styles.container}>
       <View style={styles.heading}>
         <Icon name="schedule" size={20} />
-        <AppText variant="sectionTitle">{title}</AppText>
+        <AppText variant="titleS">{title}</AppText>
       </View>
       <View style={styles.dates}>
         {items.map(item => (

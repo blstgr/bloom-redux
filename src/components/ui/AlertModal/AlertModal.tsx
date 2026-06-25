@@ -9,37 +9,18 @@ export type AlertModalVariant = 'info' | 'error';
 
 export type AlertModalProps = {
   onClose?: () => void;
-  staticPreview?: boolean;
   text: string;
   variant: AlertModalVariant;
   visible: boolean;
 };
 
-export function AlertModal({ onClose, staticPreview = false, text, variant, visible }: AlertModalProps) {
-  const [isVisible, setIsVisible] = React.useState(visible);
-
-  React.useEffect(() => {
-    setIsVisible(visible);
-  }, [visible]);
-
+export function AlertModal({ onClose, text, variant, visible }: AlertModalProps) {
   const handleClose = React.useCallback(() => {
-    setIsVisible(false);
     onClose?.();
   }, [onClose]);
 
-  if (staticPreview) {
-    return (
-      <View style={styles.card}>
-        <Icon name={variant === 'info' ? 'info' : 'dropSad'} color={colors.icon.inverse} />
-        <AppText align="center" tone="inverse" variant="body">
-          {text}
-        </AppText>
-      </View>
-    );
-  }
-
   return (
-    <Modal onRequestClose={handleClose} transparent visible={isVisible}>
+    <Modal onRequestClose={handleClose} transparent visible={visible}>
       <Pressable onPress={handleClose} style={styles.backdrop}>
         <Pressable onPress={handleClose} style={styles.card}>
           <Icon name={variant === 'info' ? 'info' : 'dropSad'} color={colors.icon.inverse} />
@@ -55,7 +36,7 @@ export function AlertModal({ onClose, staticPreview = false, text, variant, visi
 const styles = StyleSheet.create({
   backdrop: {
     alignItems: 'center',
-    backgroundColor: colors.surface.overlay,
+    backgroundColor: colors.overlay.scrim,
     flex: 1,
     justifyContent: 'center',
   },

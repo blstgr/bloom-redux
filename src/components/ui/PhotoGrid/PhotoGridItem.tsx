@@ -15,7 +15,7 @@ export function PhotoGridItem({ source, style }: PhotoGridItemProps) {
 const styles = StyleSheet.create({
   image: {
     aspectRatio: 1,
-    backgroundColor: colors.surface.plantPlaceholder,
+    backgroundColor: colors.surface.white,
     borderRadius: radii.photo,
     overflow: 'hidden',
     width: '100%',

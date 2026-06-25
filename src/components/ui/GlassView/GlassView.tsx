@@ -2,46 +2,58 @@ import { BlurView } from '@react-native-community/blur';
 import React from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radii, shadows, sizes } from '../../../theme';
+import { colors, radii, shadows } from '../../../theme';
+import { GradientBorder } from '../GradientBorder';
 
 export type GlassViewProps = {
+  border?: boolean;
   children?: React.ReactNode;
   radius?: number;
   style?: StyleProp<ViewStyle>;
 };
 
-export function GlassView({ children, radius = radii.pill, style }: GlassViewProps) {
-  return (
-    <View style={[styles.container, { borderRadius: radius }, style]}>
+const GLASS_BORDER_COLORS = ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.7)'];
+
+export function GlassView({ border = true, children, radius = radii.pill, style }: GlassViewProps) {
+  const blurAndTint = (
+    <>
       <BlurView
         blurAmount={4}
         blurType="light"
-        reducedTransparencyFallbackColor={colors.surface.glassLight}
+        reducedTransparencyFallbackColor={colors.overlay.glass}
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.tint} />
-      <View style={styles.highlight} />
       {children}
-    </View>
+    </>
+  );
+
+  if (!border) {
+    return (
+      <View style={[styles.borderless, style]}>
+        {blurAndTint}
+      </View>
+    );
+  }
+
+  return (
+    <GradientBorder
+      borderRadius={radius}
+      colors={GLASS_BORDER_COLORS}
+      style={[shadows.soft, style]}
+    >
+      {blurAndTint}
+    </GradientBorder>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.overlay.glass20,
-    borderColor: colors.border.white,
-    borderWidth: sizes.border.thin,
+  borderless: {
+    backgroundColor: colors.overlay.glass,
     overflow: 'hidden',
-    ...shadows.soft,
   },
   tint: {
     ...StyleSheet.absoluteFill,
-    backgroundColor: colors.overlay.glass20,
-  },
-  highlight: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: 'transparent',
-    borderColor: colors.border.glassSoft,
-    borderWidth: sizes.border.thin,
+    backgroundColor: colors.overlay.glass,
   },
 });

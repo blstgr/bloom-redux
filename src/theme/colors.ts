@@ -1,56 +1,56 @@
+// Single source of truth for raw color values.
+const palette = {
+  dark:   '#2E2B28',
+  green:  '#548A5C',
+  mist:   '#B9C7B2',
+  orange: '#C2531C',
+  peach:  '#FBE5D8',
+  cream:  '#EDE9E1',
+  white:  '#FFFFFF',
+} as const;
+
 export const colors = {
-  background: {
-    peach: '#FBE5D8',
-    warm: '#EFEFE4',
-    cream: '#EDE9E1',
-    softCream: '#EAE7E2',
-    white: '#FFFFFF',
-  },
   text: {
-    primary: '#2E2B28',
-    secondary: '#548A5C',
-    muted: '#708C63',
-    placeholder: '#B9C7B2',
-    inverse: '#FFFFFF',
-    dark: '#1F2024',
+    primary:     palette.dark,
+    highlighted: palette.green,   // bodyHighlight variant
+    placeholder: palette.mist,
+    inverse:     palette.white,
   },
   brand: {
-    green: '#548A5C',
-    orange: '#C2531C',
-    dark: '#2E2B28',
+    green:  palette.green,
+    orange: palette.orange,
+    dark:   palette.dark,
   },
   surface: {
-    white: '#FFFFFF',
+    white: palette.white,
     glass: 'rgba(255, 255, 255, 0.5)',
-    glassLight: 'rgba(255, 255, 255, 0.2)',
-    glassSubtle: 'rgba(255, 255, 255, 0.05)',
-    dark: '#2E2B28',
-    plantPlaceholder: '#C2C8CA',
-    overlay: 'rgba(0,0,0,0.2)',
+    dark:  palette.dark,
   },
   border: {
-    white: '#FFFFFF',
-    glass: 'rgba(255, 255, 255, 0.6)',
-    glassSoft: 'rgba(255, 255, 255, 0.4)',
+    white: palette.white,
+    // Semi-transparent white border for glass surfaces.
+    // Note: RN borderColor is a single value — gradient borders require a LinearGradient mask.
+    glass: 'rgba(255, 255, 255, 0.7)',
   },
   action: {
-    primary: '#2E2B28',
-    success: '#548A5C',
-    danger: '#C2531C',
+    primary:  palette.dark,
+    success:  palette.green,
+    danger:   palette.orange,
     disabled: 'rgba(46, 43, 40, 0.48)',
   },
   icon: {
-    primary: '#2E2B28',
-    inverse: '#FFFFFF',
-    green: '#548A5C',
+    primary: palette.dark,
+    inverse: palette.white,
+    green:   palette.green,
   },
   overlay: {
-    dark18: 'rgba(46, 43, 40, 0.18)',
-    light45: 'rgba(255, 255, 255, 0.45)',
-    glass20: 'rgba(255, 255, 255, 0.2)',
+    dim:   'rgba(46, 43, 40, 0.18)',   // Loader dark overlay
+    frost: 'rgba(255, 255, 255, 0.45)', // Loader light overlay
+    glass: 'rgba(255, 255, 255, 0.2)',  // GlassView background/tint
+    scrim: 'rgba(0, 0, 0, 0.2)',        // AlertModal backdrop
   },
 } as const;
 
 export const gradients = {
-  appBackground: [colors.background.peach, colors.background.warm],
+  appBackground: [palette.peach, palette.cream],
 } as const;

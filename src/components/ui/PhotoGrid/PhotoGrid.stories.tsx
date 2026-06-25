@@ -1,16 +1,17 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { spacing } from '../../../theme';
-import { IconButton } from '../IconButton/IconButton';
+import { Button } from '../Button';
 import { PlantCard } from '../PlantCard/PlantCard';
-import { PlantGallery } from './index';
+import { TopActions } from '../TopActions';
+import { PhotoGrid } from './index';
 
 const meta = {
-  title: 'Spec/PlantGallery',
-  component: PlantGallery,
-} satisfies Meta<typeof PlantGallery>;
+  title: 'Spec/PhotoGrid',
+  component: PhotoGrid,
+} satisfies Meta<typeof PhotoGrid>;
 
 export default meta;
 
@@ -29,7 +30,7 @@ const cards = [
 ];
 
 function Plant({ i }: { i: number }) {
-  return <PlantCard image={cards[i]} plantId={`${i + 1}`} />;
+  return <PlantCard image={cards[i]} />;
 }
 
 export const A_All: Story = {
@@ -42,9 +43,9 @@ export const B_OneColumn: Story = {
   name: 'One column',
   args: {} as never,
   render: () => (
-    <PlantGallery>
+    <PhotoGrid>
       <Plant i={0} />
-    </PlantGallery>
+    </PhotoGrid>
   ),
 };
 
@@ -52,11 +53,11 @@ export const C_TwoColumns: Story = {
   name: 'Two columns',
   args: {} as never,
   render: () => (
-    <PlantGallery>
+    <PhotoGrid>
       <Plant i={0} />
       <Plant i={1} />
       <Plant i={2} />
-    </PlantGallery>
+    </PhotoGrid>
   ),
 };
 
@@ -65,7 +66,7 @@ export const D_ThreeColumns: Story = {
   args: {} as never,
   render: () => (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <PlantGallery>
+      <PhotoGrid>
         <Plant i={0} />
         <Plant i={1} />
         <Plant i={2} />
@@ -75,20 +76,12 @@ export const D_ThreeColumns: Story = {
         <Plant i={6} />
         <Plant i={7} />
         <Plant i={8} />
-      </PlantGallery>
+      </PhotoGrid>
     </ScrollView>
   ),
 };
 
 const styles = StyleSheet.create({
-  block: {
-    marginBottom: spacing.xl,
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
   scrollContent: {
     gap: spacing.md,
     paddingBottom: spacing.md,
@@ -101,23 +94,31 @@ function InteractiveGridDemo() {
 
   return (
     <ScrollView contentContainerStyle={styles.scrollContent}>
-      <View style={styles.controls}>
-        <IconButton
-          icon="minus"
-          onPress={() => setCount(prev => Math.max(1, prev - 1))}
-          variant="secondary"
-        />
-        <IconButton
-          icon="plus"
-          onPress={() => setCount(prev => Math.min(maxCount, prev + 1))}
-          variant="secondary"
-        />
-      </View>
-      <PlantGallery randomSeed={17}>
+      <TopActions
+        leftAction={
+          <Button
+            icon="minus"
+            iconOnly
+            size="small"
+            variant="secondary"
+            onPress={() => setCount(prev => Math.max(1, prev - 1))}
+          />
+        }
+        rightAction={
+          <Button
+            icon="plus"
+            iconOnly
+            size="small"
+            variant="secondary"
+            onPress={() => setCount(prev => Math.min(maxCount, prev + 1))}
+          />
+        }
+      />
+      <PhotoGrid randomSeed={17}>
         {Array.from({ length: count }, (_, i) => (
           <Plant key={`plant-${i}`} i={i % cards.length} />
         ))}
-      </PlantGallery>
+      </PhotoGrid>
     </ScrollView>
   );
 }

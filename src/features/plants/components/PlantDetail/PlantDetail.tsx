@@ -25,8 +25,8 @@ export function PlantDetail({
       <Image source={{ uri: imageUrl }} style={[styles.image, { height: imageHeight }]} />
       <View style={styles.content}>
         <View style={styles.titleStack}>
-          <AppText variant="hero">{name}</AppText>
-          <AppText tone="secondary">{category}</AppText>
+          <AppText variant="titleXl">{name}</AppText>
+          <AppText variant="bodyHighlighted">{category}</AppText>
         </View>
         <AppText>{description.slice(0, 180)}</AppText>
       </View>
@@ -36,7 +36,7 @@ export function PlantDetail({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.background.warm,
+    backgroundColor: colors.surface.white,
     width: '100%',
   },
   content: {
@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xxl,
   },
   image: {
-    backgroundColor: colors.surface.plantPlaceholder,
+    backgroundColor: colors.surface.white,
     width: '100%',
   },
   titleStack: {

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, View, type ReactNode, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { type ReactNode } from 'react';
 
 import { AppText } from '../AppText';
 import { sizes, spacing } from '../../../theme';
@@ -17,7 +18,7 @@ export function TopActions({ leftAction, mode = 'centered', rightAction, style, 
     return (
       <View style={[styles.heroContainer, style]}>
         <View style={styles.heroTitleWrap}>
-          {typeof title === 'string' ? <AppText variant="hero">{title}</AppText> : title}
+          {typeof title === 'string' ? <AppText variant="titleXl">{title}</AppText> : title}
         </View>
         <View style={styles.side}>{rightAction}</View>
       </View>
@@ -28,7 +29,7 @@ export function TopActions({ leftAction, mode = 'centered', rightAction, style, 
     <View style={[styles.container, style]}>
       <View style={styles.side}>{leftAction}</View>
       <View style={styles.titleWrap}>
-        {typeof title === 'string' ? <AppText variant="sectionTitle">{title}</AppText> : title}
+        {typeof title === 'string' ? <AppText variant="titleS">{title}</AppText> : title}
       </View>
       <View style={styles.side}>{rightAction}</View>
     </View>
@@ -40,14 +41,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    minHeight: sizes.button.normal,
+    minHeight: sizes.button.default,
     width: '100%',
   },
   heroContainer: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
-    minHeight: sizes.button.normal,
+    minHeight: sizes.button.default,
     width: '100%',
   },
   heroTitleWrap: {
@@ -55,16 +56,16 @@ const styles = StyleSheet.create({
   },
   side: {
     alignItems: 'center',
-    height: sizes.button.normal,
+    height: sizes.button.default,
     justifyContent: 'center',
-    width: sizes.button.normal,
+    width: sizes.button.default,
   },
   titleWrap: {
     alignItems: 'center',
     justifyContent: 'center',
-    left: sizes.button.normal + spacing.sm,
+    left: sizes.button.default + spacing.sm,
     maxWidth: '100%',
     position: 'absolute',
-    right: sizes.button.normal + spacing.sm,
+    right: sizes.button.default + spacing.sm,
   },
 });

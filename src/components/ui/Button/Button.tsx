@@ -11,6 +11,7 @@ import {
 import { colors, radii, shadows, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
 import { GlassView } from '../GlassView';
+import { GradientBorder } from '../GradientBorder';
 import { Icon, type IconName } from '../Icon';
 import { Loader } from '../Loader';
 
@@ -20,45 +21,45 @@ export type ButtonLayout = 'hug' | 'fill';
 
 export type ButtonProps = TouchableOpacityProps & {
   icon?: IconName;
+  iconOnly?: boolean;
   iconSize?: number;
   label?: string;
   loading?: boolean;
   layout?: ButtonLayout;
-  preset?: 'cameraShutter';
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
-  variant?: ButtonVariant | 'icon';
+  variant?: ButtonVariant;
 };
+
+const GLASS_BORDER_COLORS = ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.7)'];
 
 export function Button({
   disabled,
   icon,
+  iconOnly = false,
   iconSize,
   layout = 'hug',
   label,
   loading = false,
   size = 'normal',
-  preset,
   style,
   variant = 'primary',
   ...pressableProps
 }: ButtonProps) {
   const [measuredWidth, setMeasuredWidth] = React.useState<number | null>(null);
   const isDisabled = disabled || loading;
-  const resolvedVariant: ButtonVariant = variant === 'icon' ? 'secondary' : variant;
-  const foreground = resolvedVariant === 'primary' ? colors.text.inverse : colors.text.primary;
+  const foreground = variant === 'primary' ? colors.text.inverse : colors.text.primary;
   const hasLabel = Boolean(label);
-  const iconOnly = variant === 'icon' || (!hasLabel && Boolean(icon));
-  const compact = iconOnly;
-  const radius = radii.pill;
-  const loaderTone = resolvedVariant === 'primary' ? 'onDark' : 'onLight';
-  const loaderSize = 'small';
-  // In hug layout, lock the last measured width so swapping label->loader does not shrink the button.
+  const isIconOnly = iconOnly || (!hasLabel && Boolean(icon));
+  const loaderTone = variant === 'primary' ? 'onDark' : 'onLight';
+  const resolvedIconSize = iconSize ?? (size === 'small' ? sizes.icon.sm : sizes.icon.md);
   const keepHugWidth = layout === 'hug' && hasLabel && loading && measuredWidth != null;
-  const resolvedIconSize = preset === 'cameraShutter' ? 52 : iconSize ?? (size === 'small' ? 16 : 20);
 
   return (
-    <View style={[styles.shadowWrapper, { borderRadius: radius }, layout === 'fill' && styles.shadowWrapperFill]}>
+    <GradientBorder
+      borderRadius={radii.pill}
+      colors={GLASS_BORDER_COLORS}
+      style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill]}>
       <TouchableOpacity
         activeOpacity={0.78}
         accessibilityRole="button"
@@ -67,32 +68,27 @@ export function Button({
         style={[
           styles.base,
           styles[size],
-          compact && styles.compact,
-          styles[resolvedVariant],
+          isIconOnly && styles.compact,
+          styles[variant],
           layout === 'fill' && styles.fill,
-          iconOnly && styles.iconOnly,
-          iconOnly && size === 'small' && styles.iconOnlySmall,
+          isIconOnly && styles.iconOnly,
+          isIconOnly && size === 'small' && styles.iconOnlySmall,
           keepHugWidth && { width: measuredWidth },
           style,
         ]}
         onLayout={event => {
-          if (!loading) {
-            setMeasuredWidth(event.nativeEvent.layout.width);
-          }
+          setMeasuredWidth(event.nativeEvent.layout.width);
         }}
         {...pressableProps}>
-        {resolvedVariant === 'secondary' ? <GlassView style={styles.blurLayer} /> : null}
+        {variant === 'secondary' ? <GlassView border={false} style={styles.blurLayer} /> : null}
         <View style={[styles.content, isDisabled && styles.contentDisabled]}>
           {loading ? (
-            <Loader
-              size={loaderSize}
-              tone={loaderTone}
-            />
+            <Loader size="small" tone={loaderTone} />
           ) : (
             <>
               {icon ? <Icon name={icon} color={foreground} size={resolvedIconSize} /> : null}
               {hasLabel ? (
-                <AppText variant="button" tone={resolvedVariant === 'primary' ? 'inverse' : 'primary'}>
+                <AppText variant="button" tone={variant === 'primary' ? 'inverse' : 'primary'}>
                   {label}
                 </AppText>
               ) : null}
@@ -100,26 +96,26 @@ export function Button({
           )}
         </View>
       </TouchableOpacity>
-    </View>
+    </GradientBorder>
   );
 }
 
 const styles = StyleSheet.create({
+  shadowWrapper: {
+    alignSelf: 'flex-start',
+    ...shadows.soft,
+  },
+  shadowWrapperFill: {
+    width: '100%',
+  },
   base: {
     alignItems: 'center',
     borderRadius: radii.pill,
-    borderWidth: sizes.border.thin,
     flexDirection: 'row',
     gap: spacing.xs,
     justifyContent: 'center',
     overflow: 'hidden',
     paddingHorizontal: spacing.lg,
-  },
-  shadowWrapper: {
-    ...shadows.soft,
-  },
-  shadowWrapperFill: {
-    width: '100%',
   },
   blurLayer: {
     ...StyleSheet.absoluteFill,
@@ -141,22 +137,22 @@ const styles = StyleSheet.create({
   iconOnly: {
     aspectRatio: 1,
     borderRadius: radii.pill,
-    width: sizes.button.normal,
+    height: sizes.button.default,
+    width: sizes.button.default,
   },
   iconOnlySmall: {
+    height: sizes.button.small,
     width: sizes.button.small,
   },
   normal: {
-    minHeight: sizes.button.normal,
-    minWidth: sizes.button.normal,
+    minHeight: sizes.button.default,
+    minWidth: sizes.button.default,
   },
   primary: {
     backgroundColor: colors.action.primary,
-    borderColor: colors.border.white,
   },
   secondary: {
     backgroundColor: 'transparent',
-    borderColor: colors.surface.glassSubtle,
   },
   small: {
     minHeight: sizes.button.small,

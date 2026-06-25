@@ -1,5 +1,6 @@
 import React from 'react';
 import { Image, ScrollView, StyleSheet, View } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import { type EdgeInsets } from 'react-native-safe-area-context';
 
 import { startGridImages } from '../assets/start';
@@ -7,7 +8,7 @@ import { Logo } from '../components/brand/Logo';
 import { AppText } from '../components/ui/AppText';
 import { Button } from '../components/ui/Button';
 import { NavBar } from '../components/ui/NavBar';
-import { colors, layout, radii, spacing } from '../theme';
+import { colors, gradients, layout, radii, sizes, spacing } from '../theme';
 
 export type HomeScreenProps = {
   safeAreaInsets: EdgeInsets;
@@ -15,7 +16,7 @@ export type HomeScreenProps = {
 
 export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
   return (
-    <View style={styles.screen}>
+    <LinearGradient colors={gradients.appBackground} style={styles.screen}>
       <ScrollView
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
@@ -23,7 +24,7 @@ export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
           styles.content,
           {
             paddingTop: safeAreaInsets.top + spacing.xl,
-            paddingBottom: safeAreaInsets.bottom + spacing.nav,
+            paddingBottom: safeAreaInsets.bottom + sizes.nav.item,
           },
         ]}>
         <View style={styles.header}>
@@ -33,8 +34,8 @@ export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
 
         <View style={styles.hero}>
           <View style={styles.heroCopy}>
-            <AppText variant="headline">Good morning</AppText>
-            <AppText tone="muted">3 plants need a little care today</AppText>
+            <AppText variant="titleL">Good morning</AppText>
+            <AppText variant="bodyHighlighted">3 plants need a little care today</AppText>
           </View>
           <Button icon="water" label="Start watering" />
         </View>
@@ -60,7 +61,7 @@ export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
         ]}
         style={[styles.nav, { bottom: safeAreaInsets.bottom + spacing.md }]}
       />
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -80,7 +81,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   hero: {
-    backgroundColor: colors.background.cream,
+    backgroundColor: colors.surface.white,
     borderRadius: radii.lg,
     gap: spacing.lg,
     padding: spacing.xl,
@@ -93,7 +94,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
   },
   screen: {
-    backgroundColor: colors.background.warm,
     flex: 1,
   },
   tile: {

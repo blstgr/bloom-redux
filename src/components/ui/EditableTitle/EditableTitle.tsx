@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, spacing, typography } from '../../../theme';
 import { Icon } from '../Icon';
 
-const EDITABLE_TITLE_LINE_HEIGHT = typography.title.lineHeight;
+const EDITABLE_TITLE_LINE_HEIGHT = typography.titleM.lineHeight;
 const SINGLE_LINE_HEIGHT = EDITABLE_TITLE_LINE_HEIGHT;
 // iOS reports TextInput contentSize via native font metrics, ignoring styled lineHeight.
 // This buffer compensates for the discrepancy so the last line is never clipped.
@@ -25,7 +25,7 @@ export function EditableTitle({
 }: EditableTitleProps) {
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
-  const [inputHeight, setInputHeight] = React.useState(SINGLE_LINE_HEIGHT);
+  const [inputHeight, setInputHeight] = React.useState<number>(SINGLE_LINE_HEIGHT);
 
   React.useEffect(() => {
     setDraft(value);
@@ -104,8 +104,8 @@ const styles = StyleSheet.create({
   displayText: {
     color: colors.text.primary,
     flexShrink: 1,
-    fontFamily: typography.title.fontFamily,
-    fontSize: typography.title.fontSize,
+    fontFamily: typography.titleM.fontFamily,
+    fontSize: typography.titleM.fontSize,
     letterSpacing: 0,
     lineHeight: EDITABLE_TITLE_LINE_HEIGHT,
     textAlign: 'center',
@@ -114,8 +114,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     backgroundColor: colors.surface.white,
     color: colors.text.primary,
-    fontFamily: typography.title.fontFamily,
-    fontSize: typography.title.fontSize,
+    fontFamily: typography.titleM.fontFamily,
+    fontSize: typography.titleM.fontSize,
     letterSpacing: 0,
     lineHeight: EDITABLE_TITLE_LINE_HEIGHT,
     maxWidth: '100%',

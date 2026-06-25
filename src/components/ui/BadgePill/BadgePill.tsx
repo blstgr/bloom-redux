@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, spacing } from '../../../theme';
+import { colors, radii, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
 import { Badge } from '../Badge';
 import { type IconName } from '../Icon';
@@ -10,7 +10,9 @@ export type BadgePillVariant = 'transparent' | 'inverted' | 'default';
 export type BadgePillBadgeVariant = 'light' | 'dark';
 
 export type BadgePillProps = {
-  badgeVariant: BadgePillBadgeVariant;
+  // badgeVariant is only meaningful when variant === 'transparent'.
+  // For 'inverted' and 'default', the badge appearance is derived from variant.
+  badgeVariant?: BadgePillBadgeVariant;
   icon?: IconName;
   label: string;
   variant: BadgePillVariant;
@@ -18,11 +20,9 @@ export type BadgePillProps = {
 
 export function BadgePill({ badgeVariant, icon = 'water', label, variant }: BadgePillProps) {
   const effectiveBadgeVariant =
-    variant === 'inverted'
-      ? 'light'
-      : variant === 'default'
-        ? 'dark'
-        : badgeVariant;
+    variant === 'inverted' ? 'light'
+    : variant === 'default' ? 'dark'
+    : (badgeVariant ?? 'dark');
   const badgeStyle = effectiveBadgeVariant === 'light' ? 'default' : 'inverted';
 
   const [firstPart, ...rest] = label.trim().split(' ');
@@ -31,7 +31,7 @@ export function BadgePill({ badgeVariant, icon = 'water', label, variant }: Badg
   return (
     <View style={[styles.base, styles[variant]]}>
       <Badge icon={icon} variant={badgeStyle} />
-      <AppText style={styles.label} variant="small" tone={variant === 'inverted' ? 'inverse' : 'primary'}>
+      <AppText style={styles.label} variant="bodyS" tone={variant === 'inverted' ? 'inverse' : 'primary'}>
         {secondPart ? `${firstPart}\n${secondPart}` : firstPart}
       </AppText>
     </View>
@@ -44,6 +44,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     gap: spacing.xs,
     padding: spacing.xs,
+    width: sizes.badge.pill,
   },
   inverted: {
     backgroundColor: colors.surface.dark,

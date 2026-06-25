@@ -58,15 +58,6 @@
 			name = Bloom;
 			sourceTree = "<group>";
 		};
-		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5DCACB8F33CDC322A6C60F78 /* libPods-Bloom.a */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		24A10F1C5A0B4D3C9E7F0011 /* Fonts */ = {
 			isa = PBXGroup;
 			children = (
@@ -75,6 +66,15 @@
 				24A10F195A0B4D3C9E7F0011 /* Satoshi-Medium.otf */,
 			);
 			name = Fonts;
+			sourceTree = "<group>";
+		};
+		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
+				5DCACB8F33CDC322A6C60F78 /* libPods-Bloom.a */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {

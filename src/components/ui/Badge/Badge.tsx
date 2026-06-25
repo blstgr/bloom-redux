@@ -29,34 +29,7 @@ export function Badge({
   style,
   variant = 'default',
 }: BadgeProps) {
-  const normalizedVariant = normalizeVariant(variant);
   const countLabel = label ?? (typeof count === 'number' ? `${count}` : undefined);
-
-  if (normalizedVariant === 'alert') {
-    return (
-      <View style={[styles.count, size === 'small' && styles.small, style]}>
-        <AppText variant="small" tone="inverse">
-          {countLabel ?? '3'}
-        </AppText>
-      </View>
-    );
-  }
-
-  if (countLabel) {
-    return (
-      <View
-        style={[
-          styles.count,
-          normalizedVariant === 'inverted' && styles.countInverted,
-          size === 'small' && styles.small,
-          style,
-        ]}>
-        <AppText variant="small" tone={normalizedVariant === 'inverted' ? 'primary' : 'inverse'}>
-          {countLabel}
-        </AppText>
-      </View>
-    );
-  }
 
   if (variant === 'date') {
     return (
@@ -64,28 +37,57 @@ export function Badge({
         <View style={styles.dateIcon}>
           <Icon name={icon ?? 'water'} size={16} />
         </View>
-        <AppText align="center" variant="small" tone="inverse">
+        <AppText align="center" variant="bodyS" tone="inverse">
           {day}
         </AppText>
-        <AppText align="center" variant="small" tone="inverse">
+        <AppText align="center" variant="bodyS" tone="inverse">
           {month}
         </AppText>
       </View>
     );
   }
 
+  if (variant === 'alert') {
+    return (
+      <View style={[styles.count, size === 'small' && styles.small, style]}>
+        <AppText variant="bodyS" tone="inverse">
+          {countLabel ?? '!'}
+        </AppText>
+      </View>
+    );
+  }
+
+  if (countLabel) {
+    const inverted = variant === 'inverted';
+    return (
+      <View
+        style={[
+          styles.count,
+          inverted && styles.countInverted,
+          size === 'small' && styles.small,
+          style,
+        ]}>
+        <AppText variant="bodyS" tone={inverted ? 'primary' : 'inverse'}>
+          {countLabel}
+        </AppText>
+      </View>
+    );
+  }
+
+  // icon / default / inverted — circular icon badge
+  const inverted = variant === 'inverted';
   return (
     <View
       style={[
         styles.icon,
-        normalizedVariant === 'inverted' && styles.iconInverted,
+        inverted && styles.iconInverted,
         size === 'small' && styles.small,
         style,
       ]}>
       <Icon
         name={icon ?? 'water'}
         size={size === 'small' ? 12 : 16}
-        color={normalizedVariant === 'inverted' ? colors.icon.inverse : colors.icon.primary}
+        color={inverted ? colors.icon.inverse : colors.icon.primary}
       />
     </View>
   );
@@ -134,15 +136,3 @@ const styles = StyleSheet.create({
     width: sizes.nav.badge,
   },
 });
-
-function normalizeVariant(variant: BadgeVariant): 'default' | 'inverted' | 'alert' {
-  if (variant === 'icon' || variant === 'count') {
-    return 'default';
-  }
-
-  if (variant === 'date') {
-    return 'inverted';
-  }
-
-  return variant;
-}

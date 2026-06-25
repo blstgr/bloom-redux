@@ -4,8 +4,8 @@ import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../theme';
 import { AppText } from '../AppText';
+import { Button } from '../Button';
 import { EditableTitle } from '../EditableTitle';
-import { IconButton } from '../IconButton';
 import { TopActions } from './TopActions';
 
 const meta = {
@@ -16,12 +16,15 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+const close = <Button icon="close" iconOnly size="small" variant="secondary" />;
+const more = <Button icon="more" iconOnly size="small" variant="secondary" />;
+
 export const Default: Story = {
-  render: () => <TopActions leftAction={<IconButton icon="close" />} rightAction={<IconButton icon="more" />} />,
+  render: () => <TopActions leftAction={close} rightAction={more} />,
 };
 
 export const WithTitle: Story = {
-  render: () => <TopActions leftAction={<IconButton icon="close" />} rightAction={<IconButton icon="more" />} title={<AppText variant="title">Plant</AppText>} />,
+  render: () => <TopActions leftAction={close} rightAction={more} title={<AppText variant="titleM">Plant</AppText>} />,
 };
 
 export const WithEditableTitle: Story = {
@@ -29,8 +32,8 @@ export const WithEditableTitle: Story = {
     const [value, setValue] = React.useState('ZZ plant');
     return (
       <TopActions
-        leftAction={<IconButton icon="close" />}
-        rightAction={<IconButton icon="more" />}
+        leftAction={close}
+        rightAction={more}
         title={<EditableTitle value={value} onChange={setValue} />}
       />
     );
@@ -38,20 +41,16 @@ export const WithEditableTitle: Story = {
 };
 
 export const OnlyRightAction: Story = {
-  render: () => <TopActions rightAction={<IconButton icon="more" />} />,
+  render: () => <TopActions rightAction={more} />,
 };
 
 export const OnlyLeftAction: Story = {
-  render: () => <TopActions leftAction={<IconButton icon="close" />} />,
+  render: () => <TopActions leftAction={close} />,
 };
 
 export const Hero: Story = {
   render: () => (
-    <TopActions
-      mode="hero"
-      rightAction={<IconButton icon="more" />}
-      title={<AppText variant="hero">Plant</AppText>}
-    />
+    <TopActions mode="hero" rightAction={more} title={<AppText variant="titleXl">Plant</AppText>} />
   ),
 };
 
@@ -60,12 +59,12 @@ export const All: Story = {
     const [value, setValue] = React.useState('ZZ plant');
     return (
       <View style={styles.stack}>
-        <TopActions leftAction={<IconButton icon="close" />} rightAction={<IconButton icon="more" />} />
-        <TopActions leftAction={<IconButton icon="close" />} rightAction={<IconButton icon="more" />} title={<AppText variant="title">Plant</AppText>} />
-        <TopActions leftAction={<IconButton icon="close" />} rightAction={<IconButton icon="more" />} title={<EditableTitle value={value} onChange={setValue} />} />
-        <TopActions rightAction={<IconButton icon="more" />} />
-        <TopActions leftAction={<IconButton icon="close" />} />
-        <TopActions mode="hero" rightAction={<IconButton icon="more" />} title={<AppText variant="hero">Plant</AppText>} />
+        <TopActions leftAction={close} rightAction={more} />
+        <TopActions leftAction={close} rightAction={more} title={<AppText variant="titleM">Plant</AppText>} />
+        <TopActions leftAction={close} rightAction={more} title={<EditableTitle value={value} onChange={setValue} />} />
+        <TopActions rightAction={more} />
+        <TopActions leftAction={close} />
+        <TopActions mode="hero" rightAction={more} title={<AppText variant="titleXl">Plant</AppText>} />
       </View>
     );
   },

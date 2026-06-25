@@ -5,7 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { spacing } from '../../../../theme';
 import { AppText } from '../../../../components/ui/AppText';
 import { Button } from '../../../../components/ui/Button';
-import { IconButton } from '../../../../components/ui/IconButton';
+
 import { Input } from '../../../../components/ui/Input/Input';
 import { WateringSchedule } from './WateringSchedule';
 
@@ -107,14 +107,15 @@ function ScheduleDemo() {
     <View style={styles.frame}>
       <View style={styles.stack}>
         <View style={styles.topRow}>
-          <IconButton
+          <Button
             icon="repeat"
+            iconOnly
             onPress={() => {
               setCompletedByPlant({ fern: [], zz: [] });
               setError(undefined);
               setInputDate(formatInputDate(today));
             }}
-            size="sm"
+            size="small"
             variant="secondary"
           />
         </View>

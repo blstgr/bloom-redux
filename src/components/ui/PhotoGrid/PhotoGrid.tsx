@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 
 import { spacing } from '../../../theme';
 
-export type PlantGalleryProps = {
+export type PhotoGridProps = {
   columns?: number;
   children: ReactNode;
   gap?: number;
@@ -82,14 +82,14 @@ function buildRandomThreeColSpans(count: number, seed: number): number[] {
   return spans.slice(0, count);
 }
 
-export function PlantGallery({
+export function PhotoGrid({
   columns,
   children,
   gap = spacing.xxs,
   maxWidth = 361,
   randomSeed = 17,
   style,
-}: PlantGalleryProps) {
+}: PhotoGridProps) {
   const { width } = useWindowDimensions();
   const [containerWidth, setContainerWidth] = React.useState<number | null>(null);
   const items = React.Children.toArray(children);

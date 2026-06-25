@@ -1,94 +1,80 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
-import { Alert } from 'react-native';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../theme';
+import { BottomActions } from '../BottomActions';
+import { NavBar, type NavItem } from './NavBar';
 
-import { NavBar } from './NavBar';
-
-const defaultItems = [
-  { key: 'home', icon: 'home' as const },
-  { key: 'watering', icon: 'water' as const, badgeCount: 3 },
+const tabItems: NavItem[] = [
+  { key: 'home',     icon: 'home',  behavior: 'tab' },
+  { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3 },
 ];
+
+const tabWithRouteItems: NavItem[] = [
+  { key: 'home',     icon: 'home',  behavior: 'tab'   },
+  { key: 'camera',   icon: 'plus',  behavior: 'route' },
+  { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3 },
+];
+
+const routeSubmitItems: NavItem[] = [
+  { key: 'camera', icon: 'camera', behavior: 'route'  },
+  { key: 'save',   icon: 'check',  behavior: 'submit' },
+];
+
+function InteractiveNavBar({ items, initialKey }: { items: NavItem[]; initialKey?: string }) {
+  const [activeKey, setActiveKey] = React.useState<string | undefined>(initialKey);
+  const interactive = items.map(item => ({
+    ...item,
+    onPress: item.behavior === 'tab'
+      ? () => setActiveKey(prev => prev === item.key ? undefined : item.key)
+      : item.onPress,
+  }));
+  return <NavBar activeKey={activeKey} items={interactive} />;
+}
 
 const meta = {
   title: 'Spec/NavBar',
   component: NavBar,
-  args: {
-    activeKey: 'home',
-    items: defaultItems,
-  },
 } satisfies Meta<typeof NavBar>;
 
 export default meta;
-
 type Story = StoryObj<typeof meta>;
 
-function DefaultNavBarDemo() {
-  const [activeKey, setActiveKey] = React.useState<'home' | 'watering'>('home');
-  return (
-    <NavBar
-      activeKey={activeKey}
-      items={[
-        { key: 'home', icon: 'home', behavior: 'tab', onPress: () => setActiveKey('home') },
-        { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3, onPress: () => setActiveKey('watering') },
-      ]}
-    />
-  );
-}
-
-function NavBarWithActionDemo() {
-  const [activeKey, setActiveKey] = React.useState<'home' | 'watering'>('home');
-  return (
-    <NavBar
-      activeKey={activeKey}
-      items={[
-        { key: 'home', icon: 'home', behavior: 'tab', onPress: () => setActiveKey('home') },
-        {
-          key: 'camera',
-          icon: 'plus',
-          behavior: 'route',
-          onPress: () => Alert.alert('Camera', 'Launch camera action'),
-        },
-        { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3, onPress: () => setActiveKey('watering') },
-      ]}
-    />
-  );
-}
-
-function NavBarWithSubmitDemo() {
-  return (
-    <NavBar
-      activeKey="save"
-      items={[
-        { key: 'camera', icon: 'camera', behavior: 'route', onPress: () => Alert.alert('Camera', 'Open camera screen') },
-        { key: 'save', icon: 'check', behavior: 'tab', onPress: () => Alert.alert('Save', 'Save plant action') },
-      ]}
-    />
-  );
-}
-
-export const Default: Story = {
-  render: () => <DefaultNavBarDemo />,
-};
-
-export const WithAction: Story = {
-  name: 'With Action',
-  render: () => <NavBarWithActionDemo />,
-};
-
-export const WithSubmit: Story = {
-  name: 'With Submit',
-  render: () => <NavBarWithSubmitDemo />,
-};
-
-export const All: Story = {
+export const _01_All: Story = {
+  name: 'All',
+  args: {} as never,
   render: () => (
-    <View style={{ gap: spacing.xl }}>
-      <DefaultNavBarDemo />
-      <NavBarWithActionDemo />
-      <NavBarWithSubmitDemo />
+    <View style={styles.stack}>
+      <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
+      <BottomActions bottomBar={<InteractiveNavBar items={tabWithRouteItems} initialKey="home" />} />
+      <BottomActions bottomBar={<NavBar items={routeSubmitItems} />} />
     </View>
   ),
 };
+
+export const _02_NavTab: Story = {
+  name: 'Nav Tab',
+  args: {} as never,
+  render: () => (
+    <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
+  ),
+};
+
+export const _03_NavTabWithRoute: Story = {
+  name: 'Nav Tab with Route',
+  args: {} as never,
+  render: () => (
+    <BottomActions bottomBar={<InteractiveNavBar items={tabWithRouteItems} initialKey="home" />} />
+  ),
+};
+
+export const _04_NavRouteWithAction: Story = {
+  name: 'Nav Route with Action',
+  args: {} as never,
+  render: () => (
+    <BottomActions bottomBar={<NavBar items={routeSubmitItems} />} />
+  ),
+};
+
+const styles = StyleSheet.create({ stack: { gap: spacing.xl } });

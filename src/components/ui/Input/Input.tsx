@@ -10,7 +10,6 @@ export type InputType = 'text' | 'email' | 'password' | 'number';
 export type InputProps = {
   disabled?: boolean;
   error?: string;
-  focused?: boolean;
   labelIcon?: IconName;
   label: string;
   onBlur?: () => void;
@@ -23,7 +22,6 @@ export type InputProps = {
 export function Input({
   disabled = false,
   error,
-  focused = false,
   labelIcon,
   label,
   onBlur,
@@ -33,13 +31,12 @@ export function Input({
   value,
 }: InputProps) {
   const [isFocused, setIsFocused] = React.useState(false);
-  const showFocused = focused || isFocused;
 
   return (
     <View style={styles.container}>
       <View style={styles.labelRow}>
         {labelIcon ? <Icon name={labelIcon} /> : null}
-        <AppText variant="sectionTitle">{label}</AppText>
+        <AppText variant="titleS">{label}</AppText>
       </View>
       <TextInput
         editable={!disabled}
@@ -55,7 +52,7 @@ export function Input({
         secureTextEntry={type === 'password'}
         style={[
           styles.input,
-          showFocused && styles.inputFocused,
+          isFocused && styles.inputFocused,
           disabled && styles.inputDisabled,
           Boolean(error) && styles.inputError,
         ]}
@@ -88,10 +85,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     borderWidth: sizes.border.thin,
     color: colors.text.primary,
-    ...typography.body,
+    fontFamily: typography.body.fontFamily,
+    fontSize: typography.body.fontSize,
     height: sizes.input.height,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.none,
   },
   inputDisabled: {
     color: colors.action.disabled,

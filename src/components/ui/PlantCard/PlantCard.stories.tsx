@@ -11,7 +11,6 @@ const meta = {
   component: PlantCard,
   args: {
     image: require('../../../assets/start/start-grid-01.jpg'),
-    plantId: 'plant-1',
   },
 } satisfies Meta<typeof PlantCard>;
 
@@ -23,29 +22,27 @@ export const Default: Story = {};
 
 export const WithBadge: Story = {
   args: {
-    badge: { icon: 'water', variant: 'badge' },
+    badge: { icon: 'water', type: 'badge' },
   },
 };
 
 export const WithBadgePill: Story = {
   args: {
-    badge: { icon: 'water', label: '15 May', variant: 'badgePill' },
+    badge: { icon: 'water', label: '15 May', type: 'pill' },
   },
 };
 
 export const All: Story = {
   render: () => (
     <View style={styles.stack}>
-      <PlantCard image={require('../../../assets/start/start-grid-01.jpg')} plantId="plant-1" />
+      <PlantCard image={require('../../../assets/start/start-grid-01.jpg')} />
       <PlantCard
-        badge={{ icon: 'water', variant: 'badge' }}
+        badge={{ icon: 'water', type: 'badge' }}
         image={require('../../../assets/start/start-grid-02.jpg')}
-        plantId="plant-2"
       />
       <PlantCard
-        badge={{ icon: 'water', label: '15 May', variant: 'badgePill' }}
+        badge={{ icon: 'water', label: '15 May', type: 'pill' }}
         image={require('../../../assets/start/start-grid-03.jpg')}
-        plantId="plant-3"
       />
     </View>
   ),

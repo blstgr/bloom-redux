@@ -12,32 +12,39 @@ export type SettingsPanelProps = {
 
 export function SettingsPanel({ onLogoutPress, rows }: SettingsPanelProps) {
   return (
-    <View style={styles.panel}>
-      {rows.map(row => (
-        <SettingsRow key={`${row.variant}-${row.label ?? row.value ?? 'row'}`} {...row} />
-      ))}
-      {onLogoutPress ? (
-        <View style={styles.logout}>
-          <Button label="Log out" onPress={onLogoutPress} />
-        </View>
-      ) : null}
+    // Outer view holds the border and shadow — no overflow:hidden so the border isn't clipped.
+    // Inner view clips row content to the rounded corners.
+    <View style={styles.border}>
+      <View style={styles.inner}>
+        {rows.map(row => (
+          <SettingsRow key={`${row.variant}-${row.label ?? row.value ?? 'row'}`} {...row} />
+        ))}
+        {onLogoutPress ? (
+          <View style={styles.logout}>
+            <Button label="Log out" onPress={onLogoutPress} />
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  logout: {
-    backgroundColor: colors.surface.white,
-    padding: spacing.xxl,
-  },
-  panel: {
+  border: {
     ...shadows.soft,
-    backgroundColor: 'transparent',
     borderColor: colors.border.glass,
     borderRadius: radii.xxl,
     borderWidth: sizes.border.thin,
+    width: '100%',
+  },
+  inner: {
+    backgroundColor: colors.surface.white,
+    borderRadius: radii.xxl - sizes.border.thin,
     gap: spacing.xxs,
     overflow: 'hidden',
-    width: '100%',
+  },
+  logout: {
+    backgroundColor: colors.surface.white,
+    padding: spacing.xxl,
   },
 });
