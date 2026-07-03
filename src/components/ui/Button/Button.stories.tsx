@@ -23,7 +23,7 @@ export const All: Story = {
   name: 'All',
   render: () => (
     <ScrollView>
-      <View style={styles.stack}>
+      <View style={styles.allStack}>
         <Button label="Continue" layout="hug" variant="primary" />
         <Button label="Continue" layout="hug" variant="secondary" />
         <Button label="Continue" size="small" variant="secondary" />
@@ -92,7 +92,7 @@ export const F_IconOnly: Story = {
 export const G_FillLayout: Story = {
   name: 'Fill layout',
   render: () => (
-    <View style={styles.stack}>
+    <View style={styles.fillStack}>
       <Button icon="google" label="Continue with Google" layout="fill" variant="primary" />
     </View>
   ),
@@ -101,7 +101,7 @@ export const G_FillLayout: Story = {
 export const H_Loading: Story = {
   name: 'Loading',
   render: () => (
-    <View style={styles.stack}>
+    <View style={styles.fillStack}>
       <Button label="Continue" layout="fill" loading variant="secondary" />
       <View style={styles.row}>
         <Button icon="plus" loading variant="primary" />
@@ -122,10 +122,19 @@ export const I_Disabled: Story = {
 };
 
 const styles = StyleSheet.create({
+  allStack: {
+    alignItems: 'flex-start',
+    gap: spacing.md,
+    width: '100%',
+  },
   stack: {
     alignItems: 'flex-start',
     gap: spacing.md,
     width: 320,
+  },
+  fillStack: {
+    gap: spacing.md,
+    width: '100%',
   },
   row: {
     flexDirection: 'row',

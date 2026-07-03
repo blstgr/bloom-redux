@@ -268,7 +268,6 @@ const styles = StyleSheet.create({
   frame: {
     flex: 1,
     justifyContent: 'flex-start',
-    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     width: '100%',
   },

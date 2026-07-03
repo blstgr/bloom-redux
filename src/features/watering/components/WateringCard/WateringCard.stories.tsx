@@ -53,7 +53,6 @@ const styles = StyleSheet.create({
   },
   frame: {
     flex: 1,
-    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     width: '100%',
   },

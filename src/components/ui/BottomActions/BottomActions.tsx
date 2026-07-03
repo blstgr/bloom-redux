@@ -2,7 +2,7 @@ import React from 'react';
 import { type ReactNode } from 'react';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { spacing } from '../../../theme';
+import { layout, spacing } from '../../../theme';
 
 export type BottomActionsProps = {
   bottomBar?: ReactNode;
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     gap: spacing.md,
-    paddingHorizontal: spacing.xxl,
+    paddingHorizontal: layout.screenPadding,
     width: '100%',
   },
   centeredChild: {

@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     maxWidth: 430,
     overflow: 'hidden',
-    padding: spacing.xl,
+    padding: spacing.md,
     width: '100%',
   },
   screen: {
