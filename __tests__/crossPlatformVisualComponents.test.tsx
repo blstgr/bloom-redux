@@ -22,13 +22,13 @@ function renderForPlatform(platform: 'android' | 'ios') {
     renderer = ReactTestRenderer.create(
       <View>
         <Button icon="water" label="Start watering" />
-        <Button icon="plus" iconOnly size="small" variant="secondary" />
+        <Button accessibilityLabel="Add plant" icon="plus" iconOnly size="small" variant="secondary" />
         <Badge count={3} />
         <BadgePill day="15" month="May" variant="default" />
         <PhotoGrid randomSeed={17}>
-          <PlantCard image={plantImage} badge={{ type: 'badge', icon: 'water' }} />
-          <PlantCard image={plantImage} badge={{ type: 'pill', label: '15 May' }} />
-          <PlantCard image={plantImage} />
+          <PlantCard accessibilityLabel="Open plant with watering badge" image={plantImage} badge={{ type: 'badge', icon: 'water' }} />
+          <PlantCard accessibilityLabel="Open plant due on 15 May" image={plantImage} badge={{ type: 'pill', label: '15 May' }} />
+          <PlantCard accessibilityLabel="Open plant" image={plantImage} />
         </PhotoGrid>
       </View>,
     );

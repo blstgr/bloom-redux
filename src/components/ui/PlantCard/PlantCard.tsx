@@ -20,14 +20,19 @@ export type PlantCardBadge =
   };
 
 export type PlantCardProps = {
+  accessibilityLabel: string;
   badge?: PlantCardBadge;
   image: ImageSourcePropType;
   onPress?: () => void;
 };
 
-export function PlantCard({ badge, image, onPress }: PlantCardProps) {
+export function PlantCard({ accessibilityLabel, badge, image, onPress }: PlantCardProps) {
   return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
+    <Pressable
+      accessibilityLabel={accessibilityLabel}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={styles.card}>
       <Image source={image} style={styles.image} />
       {badge ? (
         <View style={styles.badge}>

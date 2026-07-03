@@ -25,10 +25,18 @@ type BadgeCountProps = BadgeBaseProps & {
   icon?: never;
   label?: string;
   size?: BadgeSize;
-  variant?: 'default' | 'inverted' | 'alert' | 'count';
+  variant?: 'default' | 'inverted' | 'count';
 };
 
-export type BadgeProps = BadgeIconProps | BadgeCountProps;
+type BadgeAlertProps = BadgeBaseProps & {
+  count?: number;
+  icon?: never;
+  label?: string;
+  size?: 'small';
+  variant: 'alert';
+};
+
+export type BadgeProps = BadgeIconProps | BadgeCountProps | BadgeAlertProps;
 
 export function Badge({
   count,

@@ -24,6 +24,7 @@ const REVEAL_FADE_END = 0.8;
 const REVEAL_CHECK_FADE_MID = 0.2;
 
 export type WateringCardProps = {
+  accessibilityLabel: string;
   day: string;
   imageUrl: string;
   month: string;
@@ -32,6 +33,7 @@ export type WateringCardProps = {
 };
 
 export function WateringCard({
+  accessibilityLabel,
   day,
   imageUrl,
   month,
@@ -71,7 +73,11 @@ export function WateringCard({
         <RightActionReveal revealWidth={revealWidth} translation={translation} />
       )}
       onSwipeableOpen={handleDismiss}>
-      <Pressable accessibilityRole="button" onPress={onPress} style={[styles.card, { width: cardWidth }]}>
+      <Pressable
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole="button"
+        onPress={onPress}
+        style={[styles.card, { width: cardWidth }]}>
         <Image source={{ uri: imageUrl }} style={[styles.image, { width: cardWidth }]} />
         <View pointerEvents="none" style={styles.badge}>
           <BadgePill day={day} icon="water" month={month} variant="inverted" />

@@ -11,6 +11,7 @@ const meta = {
   title: 'Spec/WateringCard',
   component: WateringCard,
   args: {
+    accessibilityLabel: 'Open watering reminder for ZZ plant',
     day: '15',
     month: 'May',
     imageUrl: 'https://images.unsplash.com/photo-1521334884684-d80222895322?w=900',
@@ -29,7 +30,14 @@ function WateringCardDemo(args: React.ComponentProps<typeof WateringCard>) {
       <View style={styles.stack}>
         <View style={styles.topRow}>
           {!visible ? (
-            <Button icon="repeat" iconOnly onPress={() => setVisible(true)} size="small" variant="secondary" />
+            <Button
+              accessibilityLabel="Restore watering card"
+              icon="repeat"
+              iconOnly
+              onPress={() => setVisible(true)}
+              size="small"
+              variant="secondary"
+            />
           ) : null}
         </View>
 

@@ -10,6 +10,7 @@ const meta = {
   title: 'Spec/PlantCard',
   component: PlantCard,
   args: {
+    accessibilityLabel: 'Open plant details',
     image: require('../../../assets/start/start-grid-01.jpg'),
   },
 } satisfies Meta<typeof PlantCard>;
@@ -35,12 +36,17 @@ export const WithBadgePill: Story = {
 export const All: Story = {
   render: () => (
     <View style={styles.stack}>
-      <PlantCard image={require('../../../assets/start/start-grid-01.jpg')} />
       <PlantCard
+        accessibilityLabel="Open shelf plants"
+        image={require('../../../assets/start/start-grid-01.jpg')}
+      />
+      <PlantCard
+        accessibilityLabel="Open watering plant"
         badge={{ icon: 'water', type: 'badge' }}
         image={require('../../../assets/start/start-grid-02.jpg')}
       />
       <PlantCard
+        accessibilityLabel="Open plant due on 15 May"
         badge={{ icon: 'water', label: '15 May', type: 'pill' }}
         image={require('../../../assets/start/start-grid-03.jpg')}
       />

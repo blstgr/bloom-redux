@@ -21,17 +21,30 @@ export type ButtonVariant = 'primary' | 'secondary';
 export type ButtonSize = 'small' | 'normal';
 export type ButtonLayout = 'hug' | 'fill';
 
-export type ButtonProps = TouchableOpacityProps & {
-  icon?: IconName;
-  iconOnly?: boolean;
+type ButtonBaseProps = TouchableOpacityProps & {
   iconSize?: number;
-  label?: string;
   loading?: boolean;
   layout?: ButtonLayout;
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
   variant?: ButtonVariant;
 };
+
+type ButtonIconOnlyProps = ButtonBaseProps & {
+  accessibilityLabel: string;
+  icon: IconName;
+  iconOnly?: true;
+  label?: never;
+};
+
+type ButtonTextProps = ButtonBaseProps & {
+  accessibilityLabel?: string;
+  icon?: IconName;
+  iconOnly?: false;
+  label: string;
+};
+
+export type ButtonProps = ButtonIconOnlyProps | ButtonTextProps;
 
 export function Button({
   disabled,

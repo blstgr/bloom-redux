@@ -30,7 +30,7 @@ const cards = [
 ];
 
 function Plant({ i }: { i: number }) {
-  return <PlantCard image={cards[i]} />;
+  return <PlantCard accessibilityLabel={`Open plant ${i + 1}`} image={cards[i]} />;
 }
 
 export const A_All: Story = {

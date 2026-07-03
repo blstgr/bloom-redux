@@ -33,8 +33,8 @@ export const All: Story = {
         <Icon name="home" size="xl" />
         <Icon name="home" size="xxl" />
       </View>
-      {iconRows.map((row, rowIndex) => (
-        <View key={`all-row-${rowIndex}`} style={styles.row}>
+      {iconRows.map(row => (
+        <View key={`all-row-${row.join('-')}`} style={styles.row}>
           {row.map(name => (
             <View key={name} style={styles.item}>
               <Icon name={name} />
@@ -60,8 +60,8 @@ export const Sizes: Story = {
 export const Icons: Story = {
   render: () => (
     <View style={styles.sheet}>
-      {iconRows.map((row, rowIndex) => (
-        <View key={`row-${rowIndex}`} style={styles.row}>
+      {iconRows.map(row => (
+        <View key={`row-${row.join('-')}`} style={styles.row}>
           {row.map(name => (
             <View key={name} style={styles.item}>
               <Icon name={name} />

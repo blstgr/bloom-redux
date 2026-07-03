@@ -108,6 +108,7 @@ function ScheduleDemo() {
       <View style={styles.stack}>
         <View style={styles.topRow}>
           <Button
+            accessibilityLabel="Reset watering schedule demo"
             icon="repeat"
             iconOnly
             onPress={() => {

@@ -28,12 +28,12 @@ export const All: Story = {
         <Button label="Continue" layout="hug" variant="secondary" />
         <Button label="Continue" size="small" variant="secondary" />
         <Button icon="google" label="Continue with Google" layout="hug" variant="secondary" />
-        <Button icon="plus" label={undefined} iconOnly />
+        <Button accessibilityLabel="Add item" icon="plus" iconOnly />
         <Button icon="google" label="Continue with Google" layout="fill" />
         <Button label="Continue" layout="fill" loading variant="secondary" />
         <View style={styles.row}>
-          <Button icon="plus" loading variant="primary" />
-          <Button icon="plus" loading size="small" variant="secondary" />
+          <Button accessibilityLabel="Add item" icon="plus" loading variant="primary" />
+          <Button accessibilityLabel="Add item small" icon="plus" loading size="small" variant="secondary" />
         </View>
         <View style={styles.row}>
           <Button disabled label="Continue" layout="hug" variant="primary" />
@@ -84,7 +84,7 @@ export const F_IconOnly: Story = {
   name: 'Icon only',
   render: () => (
     <View style={styles.stack}>
-      <Button icon="plus" label={undefined} iconOnly />
+      <Button accessibilityLabel="Add item" icon="plus" iconOnly />
     </View>
   ),
 };
@@ -104,8 +104,8 @@ export const H_Loading: Story = {
     <View style={styles.fillStack}>
       <Button label="Continue" layout="fill" loading variant="secondary" />
       <View style={styles.row}>
-        <Button icon="plus" loading variant="primary" />
-        <Button icon="plus" loading size="small" variant="secondary" />
+        <Button accessibilityLabel="Add item" icon="plus" loading variant="primary" />
+        <Button accessibilityLabel="Add item small" icon="plus" loading size="small" variant="secondary" />
       </View>
     </View>
   ),

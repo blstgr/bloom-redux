@@ -32,6 +32,8 @@ export function EditableTitle({
     setDraft(value);
   }, [value]);
 
+  const displayAccessibilityLabel = value.trim().length > 0 ? `Edit ${value}` : `Edit ${placeholder}`;
+
   const handleBlur = React.useCallback(() => {
     // Empty value is not a valid saved state; keep editing active.
     if (draft.trim().length === 0) {
@@ -77,7 +79,11 @@ export function EditableTitle({
           />
         </View>
       ) : (
-        <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={styles.displayRow}>
+        <Pressable
+          accessibilityLabel={displayAccessibilityLabel}
+          accessibilityRole="button"
+          onPress={() => setEditing(true)}
+          style={styles.displayRow}>
           <Text style={styles.displayText}>{value.length > 0 ? value : ''}</Text>
           <Icon color={colors.icon.primary} name="edit" />
         </Pressable>
