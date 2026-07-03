@@ -53,4 +53,5 @@ export const colors = {
 
 export const gradients = {
   appBackground: [palette.peach, palette.cream],
+  glassBorder:   ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.4)'],
 } as const;

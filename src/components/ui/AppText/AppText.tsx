@@ -9,14 +9,13 @@ export type AppTextVariant =
   | 'titleL'
   | 'titleM'
   | 'titleS'
-  // Body — 3 variations
+  // Body — 2 variations
   | 'body'
-  | 'bodyHighlighted'
   | 'bodyS'
   // Utility
   | 'button';
 
-export type AppTextTone = 'primary' | 'inverse' | 'placeholder';
+export type AppTextTone = 'primary' | 'inverse' | 'placeholder' | 'highlighted';
 
 export type AppTextProps = TextProps & {
   align?: TextStyle['textAlign'];
@@ -29,17 +28,17 @@ export function AppText({
   align = 'left',
   children,
   style,
-  tone = 'primary',
+  tone,
   variant = 'body',
   ...textProps
 }: AppTextProps) {
-  const typographyStyle = typography[variant];
-  const color = typographyStyle.color ?? colors.text[tone];
+  const resolvedTone = tone ?? 'primary';
+  const color = colors.text[resolvedTone];
 
   return (
     <Text
       style={[
-        typographyStyle,
+        typography[variant],
         { color, textAlign: align },
         style,
       ]}

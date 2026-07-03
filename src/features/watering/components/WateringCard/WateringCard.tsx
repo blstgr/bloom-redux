@@ -1,14 +1,27 @@
 import React from 'react';
-import { Animated, Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Reanimated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
+import Reanimated, {
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 
+import { BadgePill } from '../../../../components/ui/BadgePill';
+import { Icon } from '../../../../components/ui/Icon';
 import { colors, radii, spacing } from '../../../../theme';
-import { BadgePill } from '../../../../components/ui/BadgePill/BadgePill';
 
 const CARD_HEIGHT = 130;
 const CARD_MAX_WIDTH = 361;
-import { Icon } from '../../../../components/ui/Icon';
+const CARD_HORIZONTAL_MARGIN_COUNT = 2;
+const COLLAPSE_DURATION_MS = 180;
+const SWIPE_FRICTION = 1.8;
+const SWIPE_RIGHT_THRESHOLD = 96;
+const REVEAL_FADE_START = 0.65;
+const REVEAL_FADE_END = 0.8;
+const REVEAL_CHECK_FADE_MID = 0.2;
 
 export type WateringCardProps = {
   day: string;
@@ -26,41 +39,34 @@ export function WateringCard({
   onPress,
 }: WateringCardProps) {
   const { width } = useWindowDimensions();
-  const cardWidth = Math.min(width - spacing.md * 2, CARD_MAX_WIDTH);
+  const cardWidth = Math.min(width - spacing.md * CARD_HORIZONTAL_MARGIN_COUNT, CARD_MAX_WIDTH);
   const [dismissed, setDismissed] = React.useState(false);
-  const collapse = React.useRef(new Animated.Value(1)).current;
+  const collapse = useSharedValue(1);
   const revealWidth = cardWidth;
 
   const handleDismiss = React.useCallback(() => {
     if (dismissed) return;
     setDismissed(true);
-    Animated.timing(collapse, {
-      toValue: 0,
-      duration: 180,
-      useNativeDriver: false,
-    }).start(({ finished }) => {
-      if (finished) onDismiss?.();
+    collapse.value = withTiming(0, { duration: COLLAPSE_DURATION_MS }, finished => {
+      if (finished && onDismiss) runOnJS(onDismiss)();
     });
   }, [collapse, dismissed, onDismiss]);
 
+  const dismissedStyle = useAnimatedStyle(() => ({
+    height: interpolate(collapse.value, [0, 1], [0, CARD_HEIGHT]),
+    opacity: collapse.value,
+  }));
+
   if (dismissed) {
-    return (
-      <Animated.View
-        style={{
-          height: collapse.interpolate({ inputRange: [0, 1], outputRange: [0, CARD_HEIGHT] }),
-          opacity: collapse,
-          overflow: 'hidden',
-        }}
-      />
-    );
+    return <Reanimated.View style={[styles.dismissed, dismissedStyle]} />;
   }
 
   return (
     <Swipeable
-      containerStyle={{ borderRadius: radii.photo, overflow: 'hidden', width: cardWidth }}
-      friction={1.8}
+      containerStyle={[styles.container, { width: cardWidth }]}
+      friction={SWIPE_FRICTION}
       overshootRight={false}
-      rightThreshold={96}
+      rightThreshold={SWIPE_RIGHT_THRESHOLD}
       renderRightActions={(_, translation) => (
         <RightActionReveal revealWidth={revealWidth} translation={translation} />
       )}
@@ -68,7 +74,7 @@ export function WateringCard({
       <Pressable accessibilityRole="button" onPress={onPress} style={[styles.card, { width: cardWidth }]}>
         <Image source={{ uri: imageUrl }} style={[styles.image, { width: cardWidth }]} />
         <View pointerEvents="none" style={styles.badge}>
-          <BadgePill badgeVariant="light" icon="water" label={`${day} ${month}`} variant="inverted" />
+          <BadgePill day={day} icon="water" month={month} variant="inverted" />
         </View>
       </Pressable>
     </Swipeable>
@@ -85,7 +91,7 @@ function RightActionReveal({
   const dropStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       Math.min(Math.max(-translation.value, 0), revealWidth) / revealWidth,
-      [0, 0.65, 0.8],
+      [0, REVEAL_FADE_START, REVEAL_FADE_END],
       [1, 1, 0],
     ),
   }));
@@ -93,8 +99,8 @@ function RightActionReveal({
   const checkStyle = useAnimatedStyle(() => ({
     opacity: interpolate(
       Math.min(Math.max(-translation.value, 0), revealWidth) / revealWidth,
-      [0.65, 0.8, 1],
-      [0, 0.2, 1],
+      [REVEAL_FADE_START, REVEAL_FADE_END, 1],
+      [0, REVEAL_CHECK_FADE_MID, 1],
     ),
   }));
 
@@ -116,10 +122,17 @@ const styles = StyleSheet.create({
     right: spacing.md,
     top: spacing.md,
   },
+  container: {
+    borderRadius: radii.photo,
+    overflow: 'hidden',
+  },
   card: {
     backgroundColor: colors.brand.green,
     borderRadius: radii.photo,
     height: CARD_HEIGHT,
+    overflow: 'hidden',
+  },
+  dismissed: {
     overflow: 'hidden',
   },
   iconOverlay: {

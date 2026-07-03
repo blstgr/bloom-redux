@@ -13,6 +13,7 @@ export const spacing = {
 export const layout = {
   screenPadding:       spacing.md,
   screenBottomPadding: spacing.xxl,
+  // Assumes the standard Android/iOS status bar height plus app chrome.
   screenTopPadding:    52,
   sectionGap:          spacing.xl,
   componentGap:        spacing.md,

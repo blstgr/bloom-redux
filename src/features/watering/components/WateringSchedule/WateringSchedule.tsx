@@ -1,10 +1,10 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '../../../../theme';
 import { AppText } from '../../../../components/ui/AppText';
-import { BadgePill } from '../../../../components/ui/BadgePill/BadgePill';
+import { BadgePill } from '../../../../components/ui/BadgePill';
 import { Icon } from '../../../../components/ui/Icon';
+import { sizes, spacing } from '../../../../theme';
 
 export type ScheduleItem = {
   completed?: boolean;
@@ -25,7 +25,7 @@ export function WateringSchedule({
   return (
     <View style={styles.container}>
       <View style={styles.heading}>
-        <Icon name="schedule" size={20} />
+        <Icon name="schedule" size={sizes.icon.md} />
         <AppText variant="titleS">{title}</AppText>
       </View>
       <View style={styles.dates}>
@@ -33,8 +33,9 @@ export function WateringSchedule({
           <BadgePill
             key={item.id}
             badgeVariant={item.completed ? 'dark' : 'light'}
+            day={item.day}
             icon={item.completed ? 'check' : 'water'}
-            label={`${item.day} ${item.month}`}
+            month={item.month}
             variant="transparent"
           />
         ))}

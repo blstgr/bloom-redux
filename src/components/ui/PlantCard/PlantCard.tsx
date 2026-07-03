@@ -3,15 +3,21 @@ import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from 're
 
 import { radii, spacing } from '../../../theme';
 import { Badge } from '../Badge';
-import { BadgePill } from '../BadgePill/BadgePill';
+import { BadgePill } from '../BadgePill';
 
 const PLANT_CARD_HEIGHT = 130;
 
-export type PlantCardBadge = {
-  icon?: 'water';
-  label?: string;
-  type: 'badge' | 'pill';
-};
+export type PlantCardBadge =
+  | {
+    icon?: 'water';
+    label?: never;
+    type: 'badge';
+  }
+  | {
+    icon?: 'water';
+    label: string;
+    type: 'pill';
+  };
 
 export type PlantCardProps = {
   badge?: PlantCardBadge;
@@ -21,7 +27,7 @@ export type PlantCardProps = {
 
 export function PlantCard({ badge, image, onPress }: PlantCardProps) {
   return (
-    <Pressable onPress={onPress} style={styles.card}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={styles.card}>
       <Image source={image} style={styles.image} />
       {badge ? (
         <View style={styles.badge}>
@@ -30,7 +36,7 @@ export function PlantCard({ badge, image, onPress }: PlantCardProps) {
           ) : (
             <BadgePill
               icon={badge.icon ?? 'water'}
-              label={badge.label ?? '15 May'}
+              label={badge.label}
               variant="inverted"
             />
           )}

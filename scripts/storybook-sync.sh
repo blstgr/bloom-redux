@@ -20,8 +20,19 @@ STORYBOOK_ENABLED=true npx react-native start --reset-cache &
 METRO_PID=$!
 
 echo "Waiting for Metro to be ready..."
+MAX_RETRIES=60
+RETRIES=0
 until curl -s http://localhost:8081/status | grep -q "packager-status:running" 2>/dev/null; do
   sleep 1
+  RETRIES=$((RETRIES + 1))
+  if [ "$RETRIES" -ge "$MAX_RETRIES" ]; then
+    echo "Metro failed to start after ${MAX_RETRIES}s" >&2
+    exit 1
+  fi
+  if ! kill -0 "$METRO_PID" 2>/dev/null; then
+    echo "Metro process died unexpectedly" >&2
+    exit 1
+  fi
 done
 echo "Metro ready."
 

@@ -7,9 +7,10 @@ import { name as appName } from '../app.json';
 // (which always writes host:'localhost') doesn't break Android sync.
 // Android emulator reaches the host machine via 10.0.2.2, not localhost.
 const wsHost = Platform.OS === 'android' ? '10.0.2.2' : 'localhost';
+let _storybookWs: (typeof globalThis)['STORYBOOK_WEBSOCKET'];
 Object.defineProperty(globalThis, 'STORYBOOK_WEBSOCKET', {
-  get() { return this._ws; },
-  set(v) { this._ws = { ...v, host: wsHost }; },
+  get() { return _storybookWs; },
+  set(v) { _storybookWs = { ...v, host: wsHost }; },
   configurable: true,
 });
 

@@ -6,6 +6,7 @@ import { colors, radii, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
 import { Button } from '../Button';
 import { Icon } from '../Icon';
+
 import { AlertModal } from './AlertModal';
 
 const meta = {
@@ -56,30 +57,39 @@ export const All: Story = {
   args: {} as never,
   render: () => (
     <View style={styles.stack}>
-      <View style={styles.card}>
-        <Icon name="dropSad" color={colors.icon.inverse} />
-        <AppText align="center" tone="inverse" variant="body">
-          Uh no... something went wrong.
-        </AppText>
-      </View>
-      <View style={styles.card}>
-        <Icon name="info" color={colors.icon.inverse} />
-        <AppText align="center" tone="inverse" variant="body">
-          You already have a ZZ Plant. Save this one under a different name or discard.
-        </AppText>
-      </View>
+      <AlertCardPreview
+        icon={<Icon color={colors.icon.inverse} name="dropSad" size={sizes.icon.lg} />}
+        text="Uh no... something went wrong."
+      />
+      <AlertCardPreview
+        icon={<Icon color={colors.icon.inverse} name="info" size={sizes.icon.lg} />}
+        text="You already have a ZZ Plant. Save this one under a different name or discard."
+      />
     </View>
   ),
 };
+
+function AlertCardPreview({ icon, text }: { icon: React.ReactNode; text: string }) {
+  return (
+    <View style={styles.card}>
+      {icon}
+      <AppText align="center" tone="inverse" variant="body">
+        {text}
+      </AppText>
+      <Button label="Close" layout="fill" size="small" variant="secondary" />
+    </View>
+  );
+}
 
 const styles = StyleSheet.create({
   card: {
     alignItems: 'center',
     backgroundColor: colors.surface.dark,
     borderRadius: radii.photo,
-    gap: spacing.md,
+    gap: spacing.xl,
     maxWidth: sizes.modal.maxWidth,
     padding: spacing.xxl,
+    width: sizes.modal.maxWidth,
   },
   demo: {
     alignItems: 'flex-start',

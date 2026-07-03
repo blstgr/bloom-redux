@@ -2,10 +2,11 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '../../../theme';
+import { WateringSlider } from '../../../features/watering/components/WateringSlider';
+import { sizes, spacing } from '../../../theme';
 import { Button } from '../Button';
 import { NavBar as NavBarComponent, type NavItem } from '../NavBar';
-import { WateringSlider } from '../../../features/watering/components/WateringSlider';
+
 import { BottomActions } from './BottomActions';
 
 // Tab-only nav: home + water
@@ -38,7 +39,7 @@ export const _01_All: Story = {
   name: 'All',
   render: () => (
     <View style={styles.stack}>
-      <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={52} variant="primary" />} />
+      <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={sizes.icon.xl} variant="primary" />} />
       <BottomActions bottomBar={<WateringSlider />} />
       <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
     </View>
@@ -48,7 +49,7 @@ export const _01_All: Story = {
 export const _02_Action: Story = {
   name: 'Action',
   render: () => (
-    <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={52} variant="primary" />} />
+    <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={sizes.icon.xl} variant="primary" />} />
   ),
 };
 

@@ -1,51 +1,44 @@
 import React from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { colors, radii, sizes, spacing } from '../../../theme';
+import { colors, radii, sizes } from '../../../theme';
 import { AppText } from '../AppText';
 import { Icon, type IconName } from '../Icon';
 
-export type BadgeVariant = 'default' | 'inverted' | 'alert' | 'count' | 'date' | 'icon';
+export type BadgeVariant = 'default' | 'inverted' | 'alert' | 'count' | 'icon';
 export type BadgeSize = 'normal' | 'small';
 
-export type BadgeProps = {
-  count?: number;
-  day?: string;
-  icon?: IconName;
-  label?: string;
-  month?: string;
-  size?: BadgeSize;
+type BadgeBaseProps = {
   style?: ViewStyle;
-  variant?: BadgeVariant;
 };
+
+type BadgeIconProps = BadgeBaseProps & {
+  count?: never;
+  icon?: IconName;
+  label?: never;
+  size?: never;
+  variant?: 'default' | 'inverted' | 'icon';
+};
+
+type BadgeCountProps = BadgeBaseProps & {
+  count?: number;
+  icon?: never;
+  label?: string;
+  size?: BadgeSize;
+  variant?: 'default' | 'inverted' | 'alert' | 'count';
+};
+
+export type BadgeProps = BadgeIconProps | BadgeCountProps;
 
 export function Badge({
   count,
-  day,
   icon,
   label,
-  month,
   size = 'normal',
   style,
   variant = 'default',
 }: BadgeProps) {
   const countLabel = label ?? (typeof count === 'number' ? `${count}` : undefined);
-
-  if (variant === 'date') {
-    return (
-      <View style={[styles.date, style]}>
-        <View style={styles.dateIcon}>
-          <Icon name={icon ?? 'water'} size={16} />
-        </View>
-        <AppText align="center" variant="bodyS" tone="inverse">
-          {day}
-        </AppText>
-        <AppText align="center" variant="bodyS" tone="inverse">
-          {month}
-        </AppText>
-      </View>
-    );
-  }
 
   if (variant === 'alert') {
     return (
@@ -76,17 +69,17 @@ export function Badge({
 
   // icon / default / inverted — circular icon badge
   const inverted = variant === 'inverted';
+
   return (
     <View
       style={[
         styles.icon,
         inverted && styles.iconInverted,
-        size === 'small' && styles.small,
         style,
       ]}>
       <Icon
         name={icon ?? 'water'}
-        size={size === 'small' ? 12 : 16}
+        size={sizes.icon.sm}
         color={inverted ? colors.icon.inverse : colors.icon.primary}
       />
     </View>
@@ -104,21 +97,6 @@ const styles = StyleSheet.create({
   },
   countInverted: {
     backgroundColor: colors.surface.white,
-  },
-  date: {
-    alignItems: 'center',
-    backgroundColor: colors.surface.dark,
-    borderRadius: radii.pill,
-    gap: spacing.xxs,
-    padding: spacing.xs,
-  },
-  dateIcon: {
-    alignItems: 'center',
-    backgroundColor: colors.surface.white,
-    borderRadius: radii.pill,
-    height: sizes.badge.md,
-    justifyContent: 'center',
-    width: sizes.badge.md,
   },
   icon: {
     alignItems: 'center',

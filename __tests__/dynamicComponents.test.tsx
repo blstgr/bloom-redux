@@ -3,7 +3,7 @@ import { Platform, TextInput, TouchableOpacity } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 
 import { NavBar, type NavItem } from '../src/components/ui/NavBar';
-import { SettingsRow } from '../src/features/settings/components/SettingsPanel/SettingsRow';
+import { SettingsRow } from '../src/features/settings/components/SettingsPanel';
 import { WateringSchedule } from '../src/features/watering/components/WateringSchedule';
 import { WateringSlider } from '../src/features/watering/components/WateringSlider';
 

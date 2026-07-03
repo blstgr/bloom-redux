@@ -2,23 +2,31 @@ import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { colors, radii, sizes } from '../../../theme';
+import { GLASS_BUTTON_ACTIVE_OPACITY } from '../Button';
 import { Icon, type IconName } from '../Icon';
 
 export type NavBarItemProps = {
+  accessibilityLabel?: string;
   active?: boolean;
   icon: IconName;
   onPress?: () => void;
 };
 
-export function NavBarItem({ active = false, icon, onPress }: NavBarItemProps) {
+export function NavBarItem({
+  accessibilityLabel,
+  active = false,
+  icon,
+  onPress,
+}: NavBarItemProps) {
   return (
     <TouchableOpacity
-      activeOpacity={0.78}
+      activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
+      accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
       onPress={onPress}
       style={[styles.item, active && styles.active]}>
-      <Icon name={icon} color={active ? colors.icon.inverse : colors.icon.primary} />
+      <Icon name={icon} color={active ? colors.icon.inverse : colors.icon.primary} size={sizes.icon.md} />
     </TouchableOpacity>
   );
 }

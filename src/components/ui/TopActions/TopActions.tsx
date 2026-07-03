@@ -1,47 +1,73 @@
 import React from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { type ReactNode } from 'react';
+import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
 
+import { colors, radii, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
-import { sizes, spacing } from '../../../theme';
-import { Button } from '../Button';
-import type { IconName } from '../Icon';
+import { GlassButtonSurface, GLASS_BUTTON_ACTIVE_OPACITY } from '../Button';
+import { Icon, type IconName } from '../Icon';
 
 export type TopActionsProps = {
   mode?: 'centered' | 'hero';
   leftAction?: ReactNode;
   leftIcon?: IconName;
+  leftLabel?: string;
   onClose?: () => void;
   onLeftPress?: () => void;
   onMore?: () => void;
   onRightPress?: () => void;
   rightAction?: ReactNode;
   rightIcon?: IconName;
+  rightLabel?: string;
   style?: StyleProp<ViewStyle>;
   title?: ReactNode;
 };
 
-const TOP_ACTION_BACKGROUND_OPACITY = 0.2;
+const TOP_ACTION_GLASS_COLOR = colors.overlay.glass;
+const TOP_ACTION_RADIUS_RATIO = 0.5;
 
-function renderAction(action: ReactNode, icon: IconName | undefined, onPress: (() => void) | undefined) {
+function TopActionButton({
+  icon,
+  label,
+  onPress,
+}: {
+  icon: IconName;
+  label: string;
+  onPress?: () => void;
+}) {
+  return (
+    <GlassButtonSurface
+      glassColor={TOP_ACTION_GLASS_COLOR}
+      radius={sizes.button.small * TOP_ACTION_RADIUS_RATIO}
+      style={styles.topActionButtonWrap}>
+      <TouchableOpacity
+        accessibilityLabel={label}
+        accessibilityRole="button"
+        activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
+        onPress={onPress}
+        style={styles.topActionButton}>
+        <Icon color={colors.icon.primary} name={icon} size={sizes.icon.md} />
+      </TouchableOpacity>
+    </GlassButtonSurface>
+  );
+}
+
+function renderAction(
+  action: ReactNode,
+  icon: IconName | undefined,
+  label: string | undefined,
+  onPress: (() => void) | undefined,
+) {
   if (action) return action;
   if (!icon) return null;
 
-  return (
-    <Button
-      icon={icon}
-      iconOnly
-      onPress={onPress}
-      secondaryBackgroundOpacity={TOP_ACTION_BACKGROUND_OPACITY}
-      size="small"
-      variant="secondary"
-    />
-  );
+  return <TopActionButton icon={icon} label={label ?? icon} onPress={onPress} />;
 }
 
 export function TopActions({
   leftAction,
   leftIcon,
+  leftLabel,
   mode = 'centered',
   onClose,
   onLeftPress,
@@ -49,11 +75,22 @@ export function TopActions({
   onRightPress,
   rightAction,
   rightIcon,
+  rightLabel,
   style,
   title,
 }: TopActionsProps) {
-  const resolvedLeftAction = renderAction(leftAction, leftIcon ?? (onClose ? 'close' : undefined), onLeftPress ?? onClose);
-  const resolvedRightAction = renderAction(rightAction, rightIcon ?? (onMore ? 'more' : undefined), onRightPress ?? onMore);
+  const resolvedLeftAction = renderAction(
+    leftAction,
+    leftIcon ?? (onClose ? 'close' : undefined),
+    leftLabel ?? (onClose ? 'Close' : undefined),
+    onLeftPress ?? onClose,
+  );
+  const resolvedRightAction = renderAction(
+    rightAction,
+    rightIcon ?? (onMore ? 'more' : undefined),
+    rightLabel ?? (onMore ? 'More options' : undefined),
+    onRightPress ?? onMore,
+  );
 
   if (mode === 'hero') {
     return (
@@ -100,6 +137,18 @@ const styles = StyleSheet.create({
     height: sizes.button.default,
     justifyContent: 'center',
     width: sizes.button.default,
+  },
+  topActionButtonWrap: {
+    height: sizes.button.small,
+    width: sizes.button.small,
+  },
+  topActionButton: {
+    alignItems: 'center',
+    borderRadius: radii.pill,
+    height: sizes.button.small,
+    justifyContent: 'center',
+    overflow: 'visible',
+    width: sizes.button.small,
   },
   titleWrap: {
     alignItems: 'center',

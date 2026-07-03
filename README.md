@@ -1,97 +1,109 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Bloom UI
 
-# Getting Started
+Reusable React Native components for Bloom, a cross-platform mobile app for iOS and Android that helps users track plant watering schedules and get reminders based on each plant's care needs.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## What Was Implemented
 
-## Step 1: Start Metro
+The project extracts repeated design elements into modular React Native components. Each component lives in its own folder/file and is driven by props for dynamic content.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+Key implemented components:
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+| Component | Path | Purpose |
+| --- | --- | --- |
+| `Button` | `src/components/ui/Button` | Primary/secondary buttons, icon-only actions, loading and disabled states |
+| `Input` | `src/components/ui/Input` | Text, email, password and number inputs with label, icon, error and disabled states |
+| `PlantCard` | `src/components/ui/PlantCard` | Image card with optional badge or date pill |
+| `PhotoGrid` | `src/components/ui/PhotoGrid` | Adaptive image grid using `useWindowDimensions` and stable item keys |
+| `NavBar` | `src/components/ui/NavBar` | Bottom segmented navigation with active state and badge support |
+| `Badge` / `BadgePill` | `src/components/ui/Badge`, `src/components/ui/BadgePill` | Circular icon badges, count badges and compact date pills |
+| `TopActions` | `src/components/ui/TopActions` | Header action controls with reusable glass-button surface |
+| `WateringSchedule` / `WateringSlider` | `src/features/watering/components` | Reusable watering workflow controls |
+| `SettingsPanel` / `SettingsRow` | `src/features/settings/components` | Settings rows, editable fields and action rows |
+| `PlantDetail` | `src/features/plants/components/PlantDetail` | Responsive plant detail block with image and truncated description |
+
+## Technical Requirements Covered
+
+- **React Native base components:** `View`, `Text`, `Image`, `ScrollView`, `TextInput`, `TouchableOpacity`, `Pressable`, `Modal`.
+- **Styling:** all component styles use `StyleSheet.create()`.
+- **Flexbox layout:** components use `flexDirection`, `justifyContent`, `alignItems`, `gap`, wrapping and flexible sizing.
+- **Adaptivity:** `PhotoGrid`, `WateringSlider`, `PlantDetail` and screens use `useWindowDimensions` for responsive sizing.
+- **Platform handling:** `GlassView` uses `Platform.OS` to render native blur on iOS and a composed fallback/tint layer on Android.
+- **Props:** labels, icons, image sources, badge data, values and callbacks are passed through props.
+- **Modularity:** UI, brand, watering, settings and plant-detail components are separated into dedicated files.
+- **Code cleanliness:** shared colors, sizes, spacing, typography and gradients are centralized in `src/theme`; repeated glass-button behavior is extracted into `GlassButtonSurface`.
+
+## Component Screenshots
+
+Screenshots were captured from Storybook on the iOS Simulator. This section covers every component from `src/components/ui`, then the plant/settings/watering feature components requested for submission.
+
+### UI Components
+
+| Component | Screenshot |
+| --- | --- |
+| AlertModal | <img src="docs/screenshots/ui-alert-modal.png" width="240" alt="AlertModal screenshot" /> |
+| AppText | <img src="docs/screenshots/ui-app-text.png" width="240" alt="AppText screenshot" /> |
+| Badge | <img src="docs/screenshots/ui-badge.png" width="240" alt="Badge screenshot" /> |
+| BadgePill | <img src="docs/screenshots/ui-badge-pill.png" width="240" alt="BadgePill screenshot" /> |
+| BottomActions | <img src="docs/screenshots/ui-bottom-actions.png" width="240" alt="BottomActions screenshot" /> |
+| Button | <img src="docs/screenshots/ui-button.png" width="240" alt="Button screenshot" /> |
+| EditableTitle | <img src="docs/screenshots/ui-editable-title.png" width="240" alt="EditableTitle screenshot" /> |
+| Icon | <img src="docs/screenshots/ui-icon.png" width="240" alt="Icon screenshot" /> |
+| Input | <img src="docs/screenshots/ui-input.png" width="240" alt="Input screenshot" /> |
+| Loader | <img src="docs/screenshots/ui-loader.png" width="240" alt="Loader screenshot" /> |
+| NavBar | <img src="docs/screenshots/ui-nav-bar.png" width="240" alt="NavBar screenshot" /> |
+| PhotoGrid | <img src="docs/screenshots/ui-photo-grid.png" width="240" alt="PhotoGrid screenshot" /> |
+| PlantCard | <img src="docs/screenshots/ui-plant-card.png" width="240" alt="PlantCard screenshot" /> |
+| TopActions | <img src="docs/screenshots/ui-top-actions.png" width="240" alt="TopActions screenshot" /> |
+
+### Feature Components
+
+| Component | Screenshot |
+| --- | --- |
+| PlantDetail | <img src="docs/screenshots/plant-detail.png" width="240" alt="PlantDetail screenshot" /> |
+| SettingsPanel | <img src="docs/screenshots/settings-panel.png" width="240" alt="SettingsPanel screenshot" /> |
+| WateringCard | <img src="docs/screenshots/watering-card.png" width="240" alt="WateringCard screenshot" /> |
+| WateringSlider | <img src="docs/screenshots/watering-slider.png" width="240" alt="WateringSlider screenshot" /> |
+
+## Running The Project
+
+Install dependencies:
 
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+npm install
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+Start the component Storybook:
 
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+npm run storybook:start
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Run Storybook on iOS:
 
 ```sh
-bundle install
+npm run storybook:ios
 ```
 
-Then, and every time you update your native dependencies, run:
+Run Storybook on Android:
 
 ```sh
-bundle exec pod install
+npm run storybook:android
 ```
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+Run tests:
 
 ```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
+npm test -- --watch=false
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+Run TypeScript check:
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```sh
+npx tsc --noEmit
+```
 
-## Step 3: Modify your app
+Run ESLint:
 
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+```sh
+npm run lint
+```

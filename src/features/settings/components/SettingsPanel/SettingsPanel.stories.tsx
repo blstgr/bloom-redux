@@ -3,6 +3,7 @@ import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../../theme';
+
 import { SettingsPanel } from './SettingsPanel';
 
 const meta = {

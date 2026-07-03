@@ -1,8 +1,9 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, radii, shadows, sizes, spacing } from '../../../../theme';
 import { Button } from '../../../../components/ui/Button';
+import { colors, radii, shadows, sizes, spacing } from '../../../../theme';
+
 import { SettingsRow, type SettingsRowProps } from './SettingsRow';
 
 export type SettingsPanelProps = {
@@ -11,14 +12,20 @@ export type SettingsPanelProps = {
 };
 
 export function SettingsPanel({ onLogoutPress, rows }: SettingsPanelProps) {
+  const rowKeyCounts = new Map<string, number>();
+
   return (
     // Outer view holds the border and shadow — no overflow:hidden so the border isn't clipped.
     // Inner view clips row content to the rounded corners.
     <View style={styles.border}>
       <View style={styles.inner}>
-        {rows.map(row => (
-          <SettingsRow key={`${row.variant}-${row.label ?? row.value ?? 'row'}`} {...row} />
-        ))}
+        {rows.map(row => {
+          const rowKeyBase = `${row.variant}-${row.label ?? row.value ?? row.buttonLabel ?? 'row'}`;
+          const rowKeyCount = rowKeyCounts.get(rowKeyBase) ?? 0;
+          rowKeyCounts.set(rowKeyBase, rowKeyCount + 1);
+
+          return <SettingsRow key={`${rowKeyBase}-${rowKeyCount}`} {...row} />;
+        })}
         {onLogoutPress ? (
           <View style={styles.logout}>
             <Button label="Log out" onPress={onLogoutPress} />

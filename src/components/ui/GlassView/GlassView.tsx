@@ -1,8 +1,8 @@
 import { BlurView } from '@react-native-community/blur';
 import React from 'react';
-import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, radii, shadows } from '../../../theme';
+import { colors, gradients, radii, shadows } from '../../../theme';
 import { GradientBorder } from '../GradientBorder';
 
 export type GlassViewProps = {
@@ -15,8 +15,6 @@ export type GlassViewProps = {
   tintColor?: string;
 };
 
-const GLASS_BORDER_COLORS = ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.7)'];
-
 export function GlassView({
   border = true,
   children,
@@ -28,12 +26,16 @@ export function GlassView({
 }: GlassViewProps) {
   const blurAndTint = (
     <>
-      <BlurView
-        blurAmount={4}
-        blurType="light"
-        reducedTransparencyFallbackColor={fallbackColor}
-        style={StyleSheet.absoluteFill}
-      />
+      {Platform.OS === 'android' ? (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: fallbackColor }]} />
+      ) : (
+        <BlurView
+          blurAmount={4}
+          blurType="ultraThinMaterialLight"
+          reducedTransparencyFallbackColor={fallbackColor}
+          style={StyleSheet.absoluteFill}
+        />
+      )}
       <View style={[styles.tint, { backgroundColor: tintColor }]} />
       {children}
     </>
@@ -50,8 +52,8 @@ export function GlassView({
   return (
     <GradientBorder
       borderRadius={radius}
-      colors={GLASS_BORDER_COLORS}
-      style={[shadows.soft, style]}
+      colors={[...gradients.glassBorder]}
+      style={[shadows.soft, { backgroundColor: containerColor }, style]}
     >
       {blurAndTint}
     </GradientBorder>

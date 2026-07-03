@@ -1,5 +1,3 @@
-import { colors } from './colors';
-
 export const fontFamilies = {
   display:  'CabinetGrotesk-Black',
   body:     'Satoshi-Medium',
@@ -28,10 +26,6 @@ export const typography = {
 
   // Body copy — Satoshi, 3 variations
   body,
-  bodyHighlighted: {
-    ...body,
-    color: colors.text.highlighted,
-  },
   bodyS,
   button: body,
 } as const;

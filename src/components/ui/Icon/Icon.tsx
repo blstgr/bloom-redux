@@ -20,7 +20,7 @@ import RepeatIcon from '../../../assets/icons/repeat.svg';
 import ScheduleIcon from '../../../assets/icons/schedule.svg';
 import TrashIcon from '../../../assets/icons/trash.svg';
 import WaterIcon from '../../../assets/icons/water.svg';
-import { colors } from '../../../theme';
+import { colors, sizes } from '../../../theme';
 
 export type IconName =
   | 'camera'
@@ -50,16 +50,19 @@ export type IconProps = {
   size?: IconSize;
 };
 
-export type IconSize = 'normal' | 'medium' | 'large' | 'xLarge' | number;
+export type IconSize = keyof typeof sizes.icon | number;
 
 const iconSizes = {
-  normal: 24,
-  medium: 32,
-  large: 40,
-  xLarge: 48,
+  sm: sizes.icon.sm,
+  md: sizes.icon.md,
+  lg: sizes.icon.lg,
+  xl: sizes.icon.xl,
+  xxl: sizes.icon.xxl,
 } as const;
 
-const iconComponents: Record<IconName, React.ComponentType<any>> = {
+type SvgProps = { color?: string; width?: number; height?: number };
+
+const iconComponents: Record<IconName, React.ComponentType<SvgProps>> = {
   camera: CameraIcon,
   check: CheckIcon,
   circle: CircleIcon,
@@ -82,7 +85,7 @@ const iconComponents: Record<IconName, React.ComponentType<any>> = {
   water: WaterIcon,
 };
 
-export function Icon({ color = colors.icon.primary, name, size = 24 }: IconProps) {
+export function Icon({ color = colors.icon.primary, name, size = sizes.icon.md }: IconProps) {
   const resolvedSize = typeof size === 'number' ? size : iconSizes[size];
   const Component = iconComponents[name];
 

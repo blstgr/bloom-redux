@@ -3,11 +3,13 @@ import { StyleSheet, View, type LayoutRectangle, type StyleProp, type ViewStyle 
 
 import { sizes, spacing } from '../../../theme';
 import { Badge } from '../Badge';
-import { SegmentedBarBase } from '../SegmentedBarBase/SegmentedBarBase';
 import { type IconName } from '../Icon';
+import { SegmentedBarBase } from '../SegmentedBarBase';
+
 import { NavBarItem } from './NavBarItem';
 
 export type NavItem = {
+  accessibilityLabel?: string;
   behavior?: 'route' | 'submit' | 'tab';
   badgeCount?: number;
   icon: IconName;
@@ -37,9 +39,11 @@ export function NavBar({ activeKey, items, style }: NavBarProps) {
               if (item.badgeCount) forceUpdate();
             }}>
             <NavBarItem
+              accessibilityLabel={item.accessibilityLabel ?? item.key}
               active={
-                (item.behavior === 'tab' && item.key === activeKey) ||
-                item.behavior === 'submit'
+                item.behavior !== 'route' && (
+                  item.key === activeKey || item.behavior === 'submit'
+                )
               }
               icon={item.icon}
               onPress={item.onPress}

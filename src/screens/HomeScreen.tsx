@@ -3,7 +3,7 @@ import { Image, ScrollView, StyleSheet, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { type EdgeInsets } from 'react-native-safe-area-context';
 
-import { startGridImages } from '../assets/start';
+import { startGridImageItems } from '../assets/start';
 import { Logo } from '../components/brand/Logo';
 import { AppText } from '../components/ui/AppText';
 import { Button } from '../components/ui/Button';
@@ -14,9 +14,12 @@ export type HomeScreenProps = {
   safeAreaInsets: EdgeInsets;
 };
 
+const LOGO_WIDTH = 138;
+const START_GRID_IMAGE_COUNT = 6;
+
 export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
   return (
-    <LinearGradient colors={gradients.appBackground} style={styles.screen}>
+    <LinearGradient colors={[...gradients.appBackground]} style={styles.screen}>
       <ScrollView
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
@@ -28,26 +31,21 @@ export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
           },
         ]}>
         <View style={styles.header}>
-          <Logo width={138} />
+          <Logo width={LOGO_WIDTH} />
           <Button icon="plus" size="small" accessibilityLabel="Add plant" />
         </View>
 
         <View style={styles.hero}>
           <View style={styles.heroCopy}>
             <AppText variant="titleL">Good morning</AppText>
-            <AppText variant="bodyHighlighted">3 plants need a little care today</AppText>
+            <AppText tone="highlighted">3 plants need a little care today</AppText>
           </View>
           <Button icon="water" label="Start watering" />
         </View>
 
         <View style={styles.grid}>
-          {startGridImages.slice(0, 6).map((source, index) => (
-            <Image
-              key={index}
-              source={source}
-              resizeMode="cover"
-              style={styles.tile}
-            />
+          {startGridImageItems.slice(0, START_GRID_IMAGE_COUNT).map(item => (
+            <Image key={item.id} source={item.source} resizeMode="cover" style={styles.tile} />
           ))}
         </View>
       </ScrollView>

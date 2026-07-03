@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../theme';
+
 import { Icon, type IconName } from './Icon';
 
 const meta = {
@@ -43,16 +44,19 @@ export const All: Story = {
     <View style={styles.stack}>
       <View style={styles.grid}>
         <View style={styles.item}>
-          <Icon name="home" size="normal" />
+          <Icon name="home" size="sm" />
         </View>
         <View style={styles.item}>
-          <Icon name="home" size="medium" />
+          <Icon name="home" size="md" />
         </View>
         <View style={styles.item}>
-          <Icon name="home" size="large" />
+          <Icon name="home" size="lg" />
         </View>
         <View style={styles.item}>
-          <Icon name="home" size="xLarge" />
+          <Icon name="home" size="xl" />
+        </View>
+        <View style={styles.item}>
+          <Icon name="home" size="xxl" />
         </View>
       </View>
       <View style={styles.grid}>
@@ -69,10 +73,11 @@ export const All: Story = {
 export const Sizes: Story = {
   render: () => (
     <View style={styles.sizeRow}>
-      <Icon name="home" size="normal" />
-      <Icon name="home" size="medium" />
-      <Icon name="home" size="large" />
-      <Icon name="home" size="xLarge" />
+      <Icon name="home" size="sm" />
+      <Icon name="home" size="md" />
+      <Icon name="home" size="lg" />
+      <Icon name="home" size="xl" />
+      <Icon name="home" size="xxl" />
     </View>
   ),
 };

@@ -1,10 +1,12 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '../../../../theme';
-import { Button } from '../../../../components/ui/Button';
 import { AppText } from '../../../../components/ui/AppText';
-import { Input } from '../../../../components/ui/Input/Input';
+import { Button } from '../../../../components/ui/Button';
+import { Input } from '../../../../components/ui/Input';
+import { colors, spacing } from '../../../../theme';
+
+const REVEALED_SUFFIX_LENGTH = 4;
 
 export type SettingsRowVariant =
   | 'text'
@@ -59,7 +61,7 @@ export function SettingsRow({
   const displayValue = React.useMemo(() => {
     if (!secure || isEditing) return value;
     if ((label ?? '').toLowerCase().includes('api key')) {
-      return `${'•'.repeat(Math.max(0, value.length - 4))}${value.slice(-4)}`;
+      return `${'•'.repeat(Math.max(0, value.length - REVEALED_SUFFIX_LENGTH))}${value.slice(-REVEALED_SUFFIX_LENGTH)}`;
     }
     return value.replace(/./g, '•');
   }, [isEditing, label, secure, value]);
@@ -96,8 +98,8 @@ export function SettingsRow({
           hasMultiEditFields && editFields ? (
             <View style={styles.editFields}>
               {editFields.map((field, index) => (
-                <Input
-                  key={`${field.label}-${index}`}
+                // eslint-disable-next-line react/no-array-index-key
+                <Input key={`${field.label}-${index}`}
                   label={field.label}
                   onBlur={() => {}}
                   onChangeText={next =>

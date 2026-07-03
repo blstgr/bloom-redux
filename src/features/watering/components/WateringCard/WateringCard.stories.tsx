@@ -2,8 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '../../../../theme';
 import { Button } from '../../../../components/ui/Button';
+import { spacing } from '../../../../theme';
+
 import { WateringCard } from './WateringCard';
 
 const meta = {
@@ -20,26 +21,28 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  render: args => {
-    const [visible, setVisible] = React.useState(true);
+function WateringCardDemo(args: React.ComponentProps<typeof WateringCard>) {
+  const [visible, setVisible] = React.useState(true);
 
-    return (
-      <View style={styles.frame}>
-        <View style={styles.stack}>
-          <View style={styles.topRow}>
-            {!visible ? (
-              <Button icon="repeat" iconOnly onPress={() => setVisible(true)} size="small" variant="secondary" />
-            ) : null}
-          </View>
+  return (
+    <View style={styles.frame}>
+      <View style={styles.stack}>
+        <View style={styles.topRow}>
+          {!visible ? (
+            <Button icon="repeat" iconOnly onPress={() => setVisible(true)} size="small" variant="secondary" />
+          ) : null}
+        </View>
 
-          <View style={styles.cardContainer}>
-            {visible ? <WateringCard {...args} onDismiss={() => setVisible(false)} /> : null}
-          </View>
+        <View style={styles.cardContainer}>
+          {visible ? <WateringCard {...args} onDismiss={() => setVisible(false)} /> : null}
         </View>
       </View>
-    );
-  },
+    </View>
+  );
+}
+
+export const Default: Story = {
+  render: args => <WateringCardDemo {...args} />,
 };
 
 const styles = StyleSheet.create({

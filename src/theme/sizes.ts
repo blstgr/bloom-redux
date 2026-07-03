@@ -9,11 +9,11 @@ export const sizes = {
     symbolHeight: 53,
   },
   icon: {
-    sm:      16,
-    md:      24,
-    lg:      24,
-    xl:      44,
-    shutter: 52,
+    sm:  16,
+    md:  24,
+    lg:  32,
+    xl:  52,
+    xxl: 76,
   },
   button: {
     small:   44,
@@ -32,6 +32,6 @@ export const sizes = {
     height: 42,
   },
   modal: {
-    maxWidth: 224,
+    maxWidth: 284,
   },
 } as const;

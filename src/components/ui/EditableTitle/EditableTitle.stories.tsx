@@ -12,13 +12,15 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+function EditableTitleWithState() {
+  const [value, setValue] = React.useState('ZZ plant');
+  return <EditableTitle value={value} onChange={setValue} />;
+}
+
 export const Default: Story = {
   args: {
     value: 'ZZ plant',
     onChange: () => {},
   },
-  render: () => {
-    const [value, setValue] = React.useState('ZZ plant');
-    return <EditableTitle value={value} onChange={setValue} />;
-  },
+  render: () => <EditableTitleWithState />,
 };

@@ -5,6 +5,7 @@ import { StyleSheet, View } from 'react-native';
 import { spacing } from '../../../theme';
 import { AppText } from '../AppText';
 import { EditableTitle } from '../EditableTitle';
+
 import { TopActions } from './TopActions';
 
 const meta = {

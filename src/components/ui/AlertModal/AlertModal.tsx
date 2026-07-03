@@ -1,8 +1,9 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet } from 'react-native';
 
 import { colors, radii, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
+import { Button } from '../Button';
 import { Icon } from '../Icon';
 
 export type AlertModalVariant = 'info' | 'error';
@@ -21,12 +22,24 @@ export function AlertModal({ onClose, text, variant, visible }: AlertModalProps)
 
   return (
     <Modal onRequestClose={handleClose} transparent visible={visible}>
-      <Pressable onPress={handleClose} style={styles.backdrop}>
-        <Pressable onPress={handleClose} style={styles.card}>
-          <Icon name={variant === 'info' ? 'info' : 'dropSad'} color={colors.icon.inverse} />
+      <Pressable accessible={false} onPress={handleClose} style={styles.backdrop}>
+        <Pressable
+          accessible={false}
+          onPress={event => {
+            event.stopPropagation();
+          }}
+          style={styles.card}>
+          <Icon name={variant === 'info' ? 'info' : 'dropSad'} color={colors.icon.inverse} size={sizes.icon.lg} />
           <AppText align="center" tone="inverse" variant="body">
             {text}
           </AppText>
+          <Button
+            label="Close"
+            layout="fill"
+            onPress={handleClose}
+            size="small"
+            variant="secondary"
+          />
         </Pressable>
       </Pressable>
     </Modal>
@@ -44,8 +57,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: colors.surface.dark,
     borderRadius: radii.photo,
-    gap: spacing.md,
+    gap: spacing.xl,
     maxWidth: sizes.modal.maxWidth,
     padding: spacing.xxl,
+    width: '100%',
   },
 });

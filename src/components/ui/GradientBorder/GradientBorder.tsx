@@ -1,6 +1,6 @@
 import React from 'react';
-import LinearGradient from 'react-native-linear-gradient';
 import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 
 export type GradientBorderProps = {
   borderRadius: number;

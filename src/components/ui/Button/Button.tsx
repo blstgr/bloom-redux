@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Platform,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -9,12 +8,14 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radii, shadows, sizes, spacing } from '../../../theme';
+import { colors, gradients, radii, shadows, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
-import { GlassView } from '../GlassView';
 import { GradientBorder } from '../GradientBorder';
 import { Icon, type IconName } from '../Icon';
 import { Loader } from '../Loader';
+
+import { GlassButtonSurface } from './GlassButtonSurface';
+import { GLASS_BUTTON_ACTIVE_OPACITY } from './glassButtonTokens';
 
 export type ButtonVariant = 'primary' | 'secondary';
 export type ButtonSize = 'small' | 'normal';
@@ -27,13 +28,10 @@ export type ButtonProps = TouchableOpacityProps & {
   label?: string;
   loading?: boolean;
   layout?: ButtonLayout;
-  secondaryBackgroundOpacity?: number;
   size?: ButtonSize;
   style?: StyleProp<ViewStyle>;
   variant?: ButtonVariant;
 };
-
-const GLASS_BORDER_COLORS = ['rgba(255, 255, 255, 1)', 'rgba(255, 255, 255, 0.7)'];
 
 export function Button({
   disabled,
@@ -44,76 +42,85 @@ export function Button({
   label,
   loading = false,
   size = 'normal',
-  secondaryBackgroundOpacity = 0.5,
   style,
   variant = 'primary',
   ...pressableProps
 }: ButtonProps) {
-  const [measuredWidth, setMeasuredWidth] = React.useState<number | null>(null);
+  const [buttonLayout, setButtonLayout] = React.useState<{ width: number; height: number } | null>(null);
   const isDisabled = disabled || loading;
-  const foreground = variant === 'primary' ? colors.text.inverse : colors.text.primary;
+  const isPrimary = variant === 'primary';
+  const foreground = isPrimary ? colors.text.inverse : colors.text.primary;
   const hasLabel = Boolean(label);
   const isIconOnly = iconOnly || (!hasLabel && Boolean(icon));
-  const loaderTone = variant === 'primary' ? 'onDark' : 'onLight';
+  const loaderTone = isPrimary ? 'onDark' : 'onLight';
   const resolvedIconSize = iconSize ?? (isIconOnly ? sizes.icon.md : size === 'small' ? sizes.icon.sm : sizes.icon.md);
-  const keepHugWidth = layout === 'hug' && hasLabel && loading && measuredWidth != null;
-  const secondaryTintColor = `rgba(255, 255, 255, ${secondaryBackgroundOpacity})`;
+  const keepHugWidth = layout === 'hug' && hasLabel && loading && buttonLayout != null;
+
+  const touchableStyle = [
+    styles.base,
+    styles[size],
+    isIconOnly && styles.compact,
+    layout === 'fill' && styles.fill,
+    isIconOnly && styles.iconOnly,
+    isIconOnly && size === 'small' && styles.iconOnlySmall,
+    keepHugWidth && { width: buttonLayout.width },
+    style,
+  ];
+
+  const content = (
+    <View style={[styles.content, isDisabled && styles.contentDisabled]}>
+      {loading ? (
+        <Loader size="small" tone={loaderTone} />
+      ) : (
+        <>
+          {icon ? <Icon name={icon} color={foreground} size={resolvedIconSize} /> : null}
+          {hasLabel ? (
+            <AppText variant="button" tone={isPrimary ? 'inverse' : 'primary'}>
+              {label}
+            </AppText>
+          ) : null}
+        </>
+      )}
+    </View>
+  );
+
+  if (isPrimary) {
+    return (
+      <View style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill]}>
+        <GradientBorder
+          borderRadius={radii.pill}
+          colors={[...gradients.glassBorder]}
+          style={styles.buttonSurface}>
+          <TouchableOpacity
+            activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
+            accessibilityRole="button"
+            accessibilityState={{ busy: loading, disabled: isDisabled }}
+            disabled={isDisabled}
+            style={[...touchableStyle, styles.primary]}
+            onLayout={event => setButtonLayout(event.nativeEvent.layout)}
+            {...pressableProps}>
+            {content}
+          </TouchableOpacity>
+        </GradientBorder>
+      </View>
+    );
+  }
 
   return (
-    <View style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill]}>
-      <GradientBorder
-        borderRadius={radii.pill}
-        colors={GLASS_BORDER_COLORS}
-        style={styles.buttonSurface}>
-        <TouchableOpacity
-          activeOpacity={0.78}
-          accessibilityRole="button"
-          accessibilityState={{ busy: loading, disabled: isDisabled }}
-          disabled={isDisabled}
-          style={[
-            styles.base,
-            styles[size],
-            isIconOnly && styles.compact,
-            styles[variant],
-            layout === 'fill' && styles.fill,
-            isIconOnly && styles.iconOnly,
-            isIconOnly && size === 'small' && styles.iconOnlySmall,
-            keepHugWidth && { width: measuredWidth },
-            style,
-          ]}
-          onLayout={event => {
-            setMeasuredWidth(event.nativeEvent.layout.width);
-          }}
-          {...pressableProps}>
-          {variant === 'secondary' ? (
-            Platform.OS === 'android' ? (
-              <View style={[styles.blurLayer, { backgroundColor: secondaryTintColor }]} />
-            ) : (
-              <GlassView
-                border={false}
-                containerColor="transparent"
-                style={styles.blurLayer}
-                tintColor={secondaryTintColor}
-              />
-            )
-          ) : null}
-          <View style={[styles.content, isDisabled && styles.contentDisabled]}>
-            {loading ? (
-              <Loader size="small" tone={loaderTone} />
-            ) : (
-              <>
-                {icon ? <Icon name={icon} color={foreground} size={resolvedIconSize} /> : null}
-                {hasLabel ? (
-                  <AppText variant="button" tone={variant === 'primary' ? 'inverse' : 'primary'}>
-                    {label}
-                  </AppText>
-                ) : null}
-              </>
-            )}
-          </View>
-        </TouchableOpacity>
-      </GradientBorder>
-    </View>
+    <GlassButtonSurface
+      glassColor={colors.surface.glass}
+      onLayout={setButtonLayout}
+      style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill]}>
+      <TouchableOpacity
+        activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
+        accessibilityRole="button"
+        accessibilityState={{ busy: loading, disabled: isDisabled }}
+        disabled={isDisabled}
+        style={[...touchableStyle, styles.glass]}
+        {...pressableProps}>
+        {content}
+      </TouchableOpacity>
+    </GlassButtonSurface>
   );
 }
 
@@ -141,8 +148,9 @@ const styles = StyleSheet.create({
   buttonSurface: {
     zIndex: 1,
   },
-  blurLayer: {
-    ...StyleSheet.absoluteFill,
+  glass: {
+    backgroundColor: 'transparent',
+    overflow: 'visible',
   },
   contentDisabled: {
     opacity: 0.48,
@@ -175,9 +183,6 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: colors.action.primary,
-  },
-  secondary: {
-    backgroundColor: 'transparent',
   },
   small: {
     minHeight: sizes.button.small,

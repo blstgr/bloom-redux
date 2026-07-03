@@ -40,6 +40,7 @@ export function Input({
       </View>
       <View style={[styles.inputWrapper, isFocused && styles.inputWrapperFocused]}>
         <TextInput
+          accessibilityLabel={label}
           editable={!disabled}
           keyboardType={type === 'number' ? 'numeric' : type === 'email' ? 'email-address' : 'default'}
           onBlur={() => {

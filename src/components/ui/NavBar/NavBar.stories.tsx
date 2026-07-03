@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { spacing } from '../../../theme';
 import { BottomActions } from '../BottomActions';
+
 import { NavBar, type NavItem } from './NavBar';
 
 const tabItems: NavItem[] = [

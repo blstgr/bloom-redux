@@ -3,8 +3,9 @@ import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { spacing } from '../../../theme';
-import { PlantCard } from '../PlantCard/PlantCard';
+import { PlantCard } from '../PlantCard';
 import { TopActions } from '../TopActions';
+
 import { PhotoGrid } from './index';
 
 const meta = {
@@ -43,7 +44,7 @@ export const B_OneColumn: Story = {
   args: {} as never,
   render: () => (
     <PhotoGrid>
-      <Plant i={0} />
+      <Plant key="plant-0" i={0} />
     </PhotoGrid>
   ),
 };
@@ -53,9 +54,9 @@ export const C_TwoColumns: Story = {
   args: {} as never,
   render: () => (
     <PhotoGrid>
-      <Plant i={0} />
-      <Plant i={1} />
-      <Plant i={2} />
+      <Plant key="plant-0" i={0} />
+      <Plant key="plant-1" i={1} />
+      <Plant key="plant-2" i={2} />
     </PhotoGrid>
   ),
 };
@@ -66,15 +67,15 @@ export const D_ThreeColumns: Story = {
   render: () => (
     <ScrollView contentContainerStyle={styles.scrollContent}>
       <PhotoGrid>
-        <Plant i={0} />
-        <Plant i={1} />
-        <Plant i={2} />
-        <Plant i={3} />
-        <Plant i={4} />
-        <Plant i={5} />
-        <Plant i={6} />
-        <Plant i={7} />
-        <Plant i={8} />
+        <Plant key="plant-0" i={0} />
+        <Plant key="plant-1" i={1} />
+        <Plant key="plant-2" i={2} />
+        <Plant key="plant-3" i={3} />
+        <Plant key="plant-4" i={4} />
+        <Plant key="plant-5" i={5} />
+        <Plant key="plant-6" i={6} />
+        <Plant key="plant-7" i={7} />
+        <Plant key="plant-8" i={8} />
       </PhotoGrid>
     </ScrollView>
   ),

@@ -3,6 +3,7 @@ import { Platform, View } from 'react-native';
 import ReactTestRenderer from 'react-test-renderer';
 
 import { Badge } from '../src/components/ui/Badge';
+import { BadgePill } from '../src/components/ui/BadgePill';
 import { Button } from '../src/components/ui/Button';
 import { PhotoGrid } from '../src/components/ui/PhotoGrid';
 import { PlantCard } from '../src/components/ui/PlantCard';
@@ -23,7 +24,7 @@ function renderForPlatform(platform: 'android' | 'ios') {
         <Button icon="water" label="Start watering" />
         <Button icon="plus" iconOnly size="small" variant="secondary" />
         <Badge count={3} />
-        <Badge day="15" month="May" variant="date" />
+        <BadgePill day="15" month="May" variant="default" />
         <PhotoGrid randomSeed={17}>
           <PlantCard image={plantImage} badge={{ type: 'badge', icon: 'water' }} />
           <PlantCard image={plantImage} badge={{ type: 'pill', label: '15 May' }} />
@@ -40,6 +41,7 @@ function renderComparableTree(platform: 'android' | 'ios') {
   return stripPlatformShadowNodes(JSON.parse(JSON.stringify(renderForPlatform(platform))));
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function stripPlatformShadowNodes(node: any): any {
   if (!node || typeof node !== 'object') return node;
 

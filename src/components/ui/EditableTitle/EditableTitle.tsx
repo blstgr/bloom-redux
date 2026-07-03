@@ -26,6 +26,7 @@ export function EditableTitle({
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
   const [inputHeight, setInputHeight] = React.useState<number>(SINGLE_LINE_HEIGHT);
+  const inputRef = React.useRef<TextInput>(null);
 
   React.useEffect(() => {
     setDraft(value);
@@ -35,6 +36,7 @@ export function EditableTitle({
     // Empty value is not a valid saved state; keep editing active.
     if (draft.trim().length === 0) {
       setEditing(true);
+      requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
     setEditing(false);
@@ -56,6 +58,8 @@ export function EditableTitle({
             {draft || placeholder}
           </Text>
           <TextInput
+            ref={inputRef}
+            accessibilityLabel={placeholder}
             autoFocus
             maxLength={maxLength}
             multiline
@@ -73,7 +77,7 @@ export function EditableTitle({
           />
         </View>
       ) : (
-        <Pressable onPress={() => setEditing(true)} style={styles.displayRow}>
+        <Pressable accessibilityRole="button" onPress={() => setEditing(true)} style={styles.displayRow}>
           <Text style={styles.displayText}>{value.length > 0 ? value : ''}</Text>
           <Icon color={colors.icon.primary} name="edit" />
         </Pressable>

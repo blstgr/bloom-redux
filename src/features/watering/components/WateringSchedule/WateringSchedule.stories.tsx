@@ -2,11 +2,10 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '../../../../theme';
-import { AppText } from '../../../../components/ui/AppText';
 import { Button } from '../../../../components/ui/Button';
+import { Input } from '../../../../components/ui/Input';
+import { spacing } from '../../../../theme';
 
-import { Input } from '../../../../components/ui/Input/Input';
 import { WateringSchedule } from './WateringSchedule';
 
 type PlantType = 'zz' | 'fern';
@@ -26,6 +25,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  args: { items: [] },
   render: () => <ScheduleDemo />,
 };
 

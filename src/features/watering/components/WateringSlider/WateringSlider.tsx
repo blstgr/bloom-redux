@@ -1,30 +1,33 @@
 import React from 'react';
 import { PanResponder, StyleSheet, useWindowDimensions, View } from 'react-native';
 
+import { GlassView } from '../../../../components/ui/GlassView';
+import { Icon } from '../../../../components/ui/Icon';
 import { colors, radii, shadows, sizes, spacing } from '../../../../theme';
 
 const SLIDER_MAX_WIDTH = 329;
-const SLIDER_PROGRESS_WIDTH = 116;
+const PROGRESS_FILL_RATIO = 0.35;
+// Small px epsilon so the thumb reliably snaps at the visual end.
 const COMPLETE_THRESHOLD_OFFSET = 2;
-
-import { GlassView } from '../../../../components/ui/GlassView';
-import { Icon } from '../../../../components/ui/Icon';
+const SLIDER_HORIZONTAL_MARGIN_COUNT = 2;
 
 export type WateringSliderState = 'default' | 'progress' | 'completed';
 
 export type WateringSliderProps = {
+  accessibilityLabel?: string;
   disabled?: boolean;
   onComplete?: () => void;
   state?: WateringSliderState;
 };
 
 export function WateringSlider({
+  accessibilityLabel = 'Complete watering',
   disabled = false,
   onComplete,
   state,
 }: WateringSliderProps) {
   const { width } = useWindowDimensions();
-  const sliderWidth = Math.min(width - spacing.xxl * 2, SLIDER_MAX_WIDTH);
+  const sliderWidth = Math.min(width - spacing.xxl * SLIDER_HORIZONTAL_MARGIN_COUNT, SLIDER_MAX_WIDTH);
   const minThumbWidth = sizes.button.default;
   // Keep a small epsilon so reaching the visual end reliably counts as completed.
   const completedThreshold = sliderWidth - COMPLETE_THRESHOLD_OFFSET;
@@ -33,6 +36,7 @@ export function WateringSlider({
   const [dragWidth, setDragWidth] = React.useState<number>(minThumbWidth);
   const dragStartWidthRef = React.useRef<number>(minThumbWidth);
   const currentWidthRef = React.useRef<number>(minThumbWidth);
+  const prevSliderWidthRef = React.useRef<number>(sliderWidth);
 
   const activeState = state ?? internalState;
 
@@ -40,16 +44,19 @@ export function WateringSlider({
     if (state === 'default') {
       setDragWidth(minThumbWidth);
       currentWidthRef.current = minThumbWidth;
+      prevSliderWidthRef.current = sliderWidth;
       return;
     }
     if (state === 'progress') {
-      setDragWidth(SLIDER_PROGRESS_WIDTH);
-      currentWidthRef.current = SLIDER_PROGRESS_WIDTH;
+      setDragWidth(sliderWidth * PROGRESS_FILL_RATIO);
+      currentWidthRef.current = sliderWidth * PROGRESS_FILL_RATIO;
+      prevSliderWidthRef.current = sliderWidth;
       return;
     }
     if (state === 'completed') {
       setDragWidth(sliderWidth);
       currentWidthRef.current = sliderWidth;
+      prevSliderWidthRef.current = sliderWidth;
       return;
     }
 
@@ -59,7 +66,14 @@ export function WateringSlider({
     } else if (internalState === 'default') {
       setDragWidth(minThumbWidth);
       currentWidthRef.current = minThumbWidth;
+    } else if (internalState === 'progress' && prevSliderWidthRef.current !== sliderWidth) {
+      // Proportionally scale thumb position when sliderWidth changes mid-drag (e.g. orientation flip).
+      const ratio = currentWidthRef.current / prevSliderWidthRef.current;
+      const scaled = Math.max(minThumbWidth, Math.min(sliderWidth, sliderWidth * ratio));
+      currentWidthRef.current = scaled;
+      setDragWidth(scaled);
     }
+    prevSliderWidthRef.current = sliderWidth;
   }, [internalState, minThumbWidth, sliderWidth, state]);
 
   const panResponder = React.useMemo(
@@ -68,7 +82,7 @@ export function WateringSlider({
         onStartShouldSetPanResponder: () => !disabled && state == null,
         onMoveShouldSetPanResponder: (_, gesture) => !disabled && state == null && Math.abs(gesture.dx) > 1,
         onPanResponderGrant: () => {
-          dragStartWidthRef.current = dragWidth;
+          dragStartWidthRef.current = currentWidthRef.current;
         },
         onPanResponderMove: (_, gesture) => {
           const nextWidth = Math.max(
@@ -94,29 +108,42 @@ export function WateringSlider({
           setInternalState('default');
         },
       }),
-    [completedThreshold, disabled, minThumbWidth, onComplete, sliderWidth, state],
+    [completedThreshold, disabled, minThumbWidth, onComplete, sliderWidth, state], // dragWidth intentionally omitted — grant reads currentWidthRef instead
   );
+
+  const completeSlider = React.useCallback(() => {
+    if (disabled || state != null) return;
+    currentWidthRef.current = sliderWidth;
+    setDragWidth(sliderWidth);
+    setInternalState('completed');
+    onComplete?.();
+  }, [disabled, onComplete, sliderWidth, state]);
 
   return (
     <View style={[styles.trackShadow, { width: sliderWidth }]}>
-    <View
-      accessibilityRole="button"
-      accessibilityState={{ checked: activeState === 'completed', disabled }}
-      style={[
-        styles.track,
-        activeState === 'completed' && styles.completedTrack,
-      ]}
-      {...(state == null ? panResponder.panHandlers : undefined)}>
-      {activeState !== 'completed' ? <GlassView border={false} style={styles.blurLayer} /> : null}
       <View
+        accessibilityActions={[{ name: 'activate', label: 'Complete' }]}
+        accessibilityLabel={accessibilityLabel}
+        onAccessibilityAction={event => {
+          if (event.nativeEvent.actionName === 'activate') completeSlider();
+        }}
+        accessibilityRole="button"
+        accessibilityState={{ checked: activeState === 'completed', disabled }}
         style={[
-          styles.thumb,
-          activeState === 'completed' && styles.completedThumb,
-          activeState !== 'completed' && { width: dragWidth },
-        ]}>
-        <Icon name={activeState === 'completed' ? 'check' : 'water'} color={colors.icon.inverse} />
+          styles.track,
+          activeState === 'completed' && styles.completedTrack,
+        ]}
+        {...(state == null ? panResponder.panHandlers : undefined)}>
+        {activeState !== 'completed' ? <GlassView border={false} style={styles.blurLayer} /> : null}
+        <View
+          style={[
+            styles.thumb,
+            activeState === 'completed' && styles.completedThumb,
+            activeState !== 'completed' && { width: dragWidth },
+          ]}>
+          <Icon name={activeState === 'completed' ? 'check' : 'water'} color={colors.icon.inverse} />
+        </View>
       </View>
-    </View>
     </View>
   );
 }

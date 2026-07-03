@@ -1,8 +1,8 @@
 import React from 'react';
 import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
 
-import { colors, layout, spacing } from '../../../../theme';
 import { AppText } from '../../../../components/ui/AppText';
+import { colors, layout, spacing } from '../../../../theme';
 
 export type PlantDetailProps = {
   category: string;
@@ -11,6 +11,9 @@ export type PlantDetailProps = {
   name: string;
 };
 
+const MAX_IMAGE_HEIGHT = 326;
+const IMAGE_HEIGHT_RATIO = 0.38;
+
 export function PlantDetail({
   category,
   description,
@@ -18,7 +21,7 @@ export function PlantDetail({
   name,
 }: PlantDetailProps) {
   const { height } = useWindowDimensions();
-  const imageHeight = Math.min(height * 0.38, 326);
+  const imageHeight = Math.min(height * IMAGE_HEIGHT_RATIO, MAX_IMAGE_HEIGHT);
 
   return (
     <View style={styles.container}>
@@ -26,9 +29,9 @@ export function PlantDetail({
       <View style={styles.content}>
         <View style={styles.titleStack}>
           <AppText variant="titleXl">{name}</AppText>
-          <AppText variant="bodyHighlighted">{category}</AppText>
+          <AppText tone="highlighted">{category}</AppText>
         </View>
-        <AppText>{description.slice(0, 180)}</AppText>
+        <AppText ellipsizeMode="tail" numberOfLines={3}>{description}</AppText>
       </View>
     </View>
   );

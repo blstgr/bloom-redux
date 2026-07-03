@@ -9,30 +9,32 @@ import { type IconName } from '../Icon';
 export type BadgePillVariant = 'transparent' | 'inverted' | 'default';
 export type BadgePillBadgeVariant = 'light' | 'dark';
 
-export type BadgePillProps = {
-  // badgeVariant is only meaningful when variant === 'transparent'.
-  // For 'inverted' and 'default', the badge appearance is derived from variant.
-  badgeVariant?: BadgePillBadgeVariant;
-  icon?: IconName;
-  label: string;
-  variant: BadgePillVariant;
-};
+type BadgePillContent =
+  | { label: string; day?: never; month?: never }
+  | { day: string; month: string; label?: never };
 
-export function BadgePill({ badgeVariant, icon = 'water', label, variant }: BadgePillProps) {
+type BadgePillVariantProps =
+  | { variant: 'transparent'; badgeVariant?: BadgePillBadgeVariant }
+  | { variant: 'inverted' | 'default'; badgeVariant?: never };
+
+export type BadgePillProps = { icon?: IconName } & BadgePillContent & BadgePillVariantProps;
+
+export function BadgePill({ badgeVariant, day, icon = 'water', label, month, variant }: BadgePillProps) {
   const effectiveBadgeVariant =
     variant === 'inverted' ? 'light'
     : variant === 'default' ? 'dark'
     : (badgeVariant ?? 'dark');
   const badgeStyle = effectiveBadgeVariant === 'light' ? 'default' : 'inverted';
 
-  const [firstPart, ...rest] = label.trim().split(' ');
-  const secondPart = rest.join(' ');
+  const parts = label?.trim().split(' ') ?? [];
+  const line1 = day ?? parts[0] ?? '';
+  const line2 = month ?? parts.slice(1).join(' ');
 
   return (
     <View style={[styles.base, styles[variant]]}>
       <Badge icon={icon} variant={badgeStyle} />
       <AppText style={styles.label} variant="bodyS" tone={variant === 'inverted' ? 'inverse' : 'primary'}>
-        {secondPart ? `${firstPart}\n${secondPart}` : firstPart}
+        {line2 ? `${line1}\n${line2}` : line1}
       </AppText>
     </View>
   );

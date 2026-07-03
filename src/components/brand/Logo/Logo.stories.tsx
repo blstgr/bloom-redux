@@ -3,6 +3,7 @@ import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { radii, spacing } from '../../../theme';
+
 import { Logo, LogoSymbol } from './Logo';
 
 const meta = {
