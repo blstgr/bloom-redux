@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { spacing } from '../../../theme';
+import { layout, spacing } from '../../../theme';
 
 import { Icon, type IconName } from './Icon';
 
@@ -18,51 +18,30 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const names: IconName[] = [
-  'camera',
-  'check',
-  'circle',
-  'close',
-  'dropHappy',
-  'dropSad',
-  'edit',
-  'flash',
-  'flashOff',
-  'google',
-  'home',
-  'info',
-  'more',
-  'plant',
-  'plus',
-  'schedule',
-  'trash',
-  'water',
+const iconRows: IconName[][] = [
+  ['camera', 'check', 'circle', 'close', 'dropHappy', 'dropSad', 'edit'],
+  ['flash', 'flashOff', 'google', 'home', 'info', 'more', 'plant'],
+  ['plus', 'schedule', 'trash', 'water'],
 ];
 
 export const All: Story = {
   render: () => (
-    <View style={styles.stack}>
-      <View style={styles.grid}>
-        <View style={styles.item}>
-          <Icon name="home" size="md" />
-        </View>
-        <View style={styles.item}>
-          <Icon name="home" size="lg" />
-        </View>
-        <View style={styles.item}>
-          <Icon name="home" size="xl" />
-        </View>
-        <View style={styles.item}>
-          <Icon name="home" size="xxl" />
-        </View>
+    <View style={styles.sheet}>
+      <View style={styles.sizeRow}>
+        <Icon name="home" size="md" />
+        <Icon name="home" size="lg" />
+        <Icon name="home" size="xl" />
+        <Icon name="home" size="xxl" />
       </View>
-      <View style={styles.grid}>
-        {names.map(name => (
-          <View key={name} style={styles.item}>
-            <Icon name={name} />
-          </View>
-        ))}
-      </View>
+      {iconRows.map((row, rowIndex) => (
+        <View key={`all-row-${rowIndex}`} style={styles.row}>
+          {row.map(name => (
+            <View key={name} style={styles.item}>
+              <Icon name={name} />
+            </View>
+          ))}
+        </View>
+      ))}
     </View>
   ),
 };
@@ -80,10 +59,14 @@ export const Sizes: Story = {
 
 export const Icons: Story = {
   render: () => (
-    <View style={styles.grid}>
-      {names.map(name => (
-        <View key={name} style={styles.item}>
-          <Icon name={name} />
+    <View style={styles.sheet}>
+      {iconRows.map((row, rowIndex) => (
+        <View key={`row-${rowIndex}`} style={styles.row}>
+          {row.map(name => (
+            <View key={name} style={styles.item}>
+              <Icon name={name} />
+            </View>
+          ))}
         </View>
       ))}
     </View>
@@ -91,28 +74,24 @@ export const Icons: Story = {
 };
 
 const styles = StyleSheet.create({
-  grid: {
-    columnGap: spacing.lg,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    rowGap: spacing.md,
-    width: '100%',
-  },
-  stack: {
-    gap: spacing.lg,
-    width: '100%',
-  },
   item: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 64,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  sheet: {
+    gap: spacing.xl,
+    paddingHorizontal: layout.screenPadding,
+    width: '100%',
   },
   sizeRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.md,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     width: '100%',
   },
 });
