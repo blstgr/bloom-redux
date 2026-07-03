@@ -37,6 +37,7 @@ const noDeepImportPatterns = Object.entries(BARREL_INTERNALS).flatMap(([dir, fil
 module.exports = {
   root: true,
   extends: '@react-native',
+  ignorePatterns: ['coverage/'],
   plugins: ['import', 'react-native-a11y'],
   rules: {
     // --- Accessibility ---

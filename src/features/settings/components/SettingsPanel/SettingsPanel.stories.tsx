@@ -166,7 +166,6 @@ export const _06_WithAction: Story = {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.md,
-    paddingHorizontal: spacing.md,
     width: '100%',
   },
   stack: {

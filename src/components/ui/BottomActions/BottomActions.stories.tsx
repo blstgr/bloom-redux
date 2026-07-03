@@ -9,7 +9,7 @@ import { NavBar as NavBarComponent, type NavItem } from '../NavBar';
 
 import { BottomActions } from './BottomActions';
 
-// Tab-only nav: home + water
+// Tab-only nav: home + water.
 const tabItems: NavItem[] = [
   { key: 'home',     icon: 'home',  behavior: 'tab' },
   { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3 },
@@ -38,7 +38,7 @@ type Story = StoryObj<typeof meta>;
 export const _01_All: Story = {
   name: 'All',
   render: () => (
-    <View style={styles.stack}>
+    <View style={styles.centerStack}>
       <BottomActions bottomBar={<Button icon="circle" iconOnly iconSize={sizes.icon.xl} variant="primary" />} />
       <BottomActions bottomBar={<WateringSlider />} />
       <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
@@ -67,4 +67,10 @@ export const _04_NavBar: Story = {
   ),
 };
 
-const styles = StyleSheet.create({ stack: { gap: spacing.xl } });
+const styles = StyleSheet.create({
+  centerStack: {
+    alignItems: 'center',
+    gap: spacing.xl,
+    width: '100%',
+  },
+});

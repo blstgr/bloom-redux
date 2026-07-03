@@ -35,7 +35,7 @@ export const Inverted: Story = {
 
 export const All: Story = {
   render: () => (
-    <View style={styles.row}>
+    <View style={styles.center}>
       <BadgePill day="15" month="May" icon="water" variant="default" />
       <BadgePill day="15" month="May" icon="water" variant="inverted" />
       <BadgePill day="15" month="May" icon="water" badgeVariant="light" variant="transparent" />
@@ -44,8 +44,11 @@ export const All: Story = {
 };
 
 const styles = StyleSheet.create({
-  row: {
+  center: {
+    alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
+    justifyContent: 'center',
+    width: '100%',
   },
 });

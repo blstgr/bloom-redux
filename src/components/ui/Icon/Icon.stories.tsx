@@ -44,9 +44,6 @@ export const All: Story = {
     <View style={styles.stack}>
       <View style={styles.grid}>
         <View style={styles.item}>
-          <Icon name="home" size="sm" />
-        </View>
-        <View style={styles.item}>
           <Icon name="home" size="md" />
         </View>
         <View style={styles.item}>
@@ -73,7 +70,6 @@ export const All: Story = {
 export const Sizes: Story = {
   render: () => (
     <View style={styles.sizeRow}>
-      <Icon name="home" size="sm" />
       <Icon name="home" size="md" />
       <Icon name="home" size="lg" />
       <Icon name="home" size="xl" />
@@ -99,11 +95,13 @@ const styles = StyleSheet.create({
     columnGap: spacing.lg,
     flexDirection: 'row',
     flexWrap: 'wrap',
+    justifyContent: 'center',
     rowGap: spacing.md,
-    width: 320,
+    width: '100%',
   },
   stack: {
     gap: spacing.lg,
+    width: '100%',
   },
   item: {
     alignItems: 'center',
@@ -114,5 +112,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
+    justifyContent: 'center',
+    width: '100%',
   },
 });

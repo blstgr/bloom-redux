@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 160,
     padding: spacing.xl,
-    width: 320,
+    width: '100%',
   },
   darkPreview: {
     backgroundColor: '#1B1A1A',
@@ -70,5 +70,6 @@ const styles = StyleSheet.create({
   },
   stack: {
     gap: spacing.md,
+    width: '100%',
   },
 });

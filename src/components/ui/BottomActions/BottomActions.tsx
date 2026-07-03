@@ -13,10 +13,19 @@ export type BottomActionsProps = {
 export function BottomActions({ bottomBar, primaryButton, style }: BottomActionsProps) {
   return (
     <View style={[styles.container, style]}>
-      {primaryButton ? <View style={styles.buttonWrap}>{primaryButton}</View> : null}
-      {bottomBar ? <View style={styles.barWrap}>{bottomBar}</View> : null}
+      {primaryButton ? <View style={styles.buttonWrap}>{centeredChild(primaryButton)}</View> : null}
+      {bottomBar ? <View style={styles.barWrap}>{centeredChild(bottomBar)}</View> : null}
     </View>
   );
+}
+
+function centeredChild(node: ReactNode) {
+  if (!React.isValidElement<{ style?: StyleProp<ViewStyle> }>(node)) return node;
+
+  const existingStyle = node.props.style;
+  return React.cloneElement(node, {
+    style: [existingStyle, styles.centeredChild],
+  });
 }
 
 const styles = StyleSheet.create({
@@ -26,6 +35,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   buttonWrap: {
+    alignItems: 'center',
     width: '100%',
   },
   container: {
@@ -33,5 +43,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     paddingHorizontal: spacing.xxl,
     width: '100%',
+  },
+  centeredChild: {
+    alignSelf: 'center',
   },
 });

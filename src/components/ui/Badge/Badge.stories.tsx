@@ -18,7 +18,7 @@ type Story = StoryObj<typeof meta>;
 export const A_All: Story = {
   name: 'All',
   render: () => (
-    <View style={styles.row}>
+    <View style={styles.center}>
       <Badge icon="water" variant="default" />
       <Badge icon="water" variant="inverted" />
       <Badge count={3} variant="alert" size="small" />
@@ -52,9 +52,11 @@ export const D_Alert: Story = {
 };
 
 const styles = StyleSheet.create({
-  row: {
+  center: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: spacing.md,
+    justifyContent: 'center',
+    width: '100%',
   },
 });

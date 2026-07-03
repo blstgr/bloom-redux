@@ -51,6 +51,6 @@ export const All: Story = {
 const styles = StyleSheet.create({
   stack: {
     gap: spacing.md,
-    width: 320,
+    width: '100%',
   },
 });

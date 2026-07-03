@@ -64,7 +64,6 @@ export function Button({
     isIconOnly && styles.iconOnly,
     isIconOnly && size === 'small' && styles.iconOnlySmall,
     keepHugWidth && { width: buttonLayout.width },
-    style,
   ];
 
   const content = (
@@ -86,7 +85,7 @@ export function Button({
 
   if (isPrimary) {
     return (
-      <View style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill]}>
+      <View style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill, style]}>
         <GradientBorder
           borderRadius={radii.pill}
           colors={[...gradients.glassBorder]}
@@ -110,7 +109,7 @@ export function Button({
     <GlassButtonSurface
       glassColor={colors.surface.glass}
       onLayout={setButtonLayout}
-      style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill]}>
+      style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill, style]}>
       <TouchableOpacity
         activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
         accessibilityRole="button"

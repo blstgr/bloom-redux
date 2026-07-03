@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
 });
 
 function InteractiveGridDemo() {
-  const [count, setCount] = React.useState(1);
+  const [count, setCount] = React.useState(6);
   const maxCount = 50;
 
   return (

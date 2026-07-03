@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
-import { View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { WateringSlider } from './WateringSlider';
 
@@ -14,5 +14,16 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  render: () => <View><WateringSlider /></View>,
+  render: () => (
+    <View style={styles.center}>
+      <WateringSlider />
+    </View>
+  ),
 };
+
+const styles = StyleSheet.create({
+  center: {
+    alignItems: 'center',
+    width: '100%',
+  },
+});
