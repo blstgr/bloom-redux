@@ -1,103 +1,125 @@
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import React from 'react';
-import { Image, ScrollView, StyleSheet, View } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
-import { type EdgeInsets } from 'react-native-safe-area-context';
+import { StyleSheet, View } from 'react-native';
 
-import { startGridImageItems } from '../assets/start';
-import { Logo } from '../components/brand/Logo';
 import { AppText } from '../components/ui/AppText';
-import { Button } from '../components/ui/Button';
-import { NavBar } from '../components/ui/NavBar';
-import { colors, gradients, layout, radii, sizes, spacing } from '../theme';
+import { BottomActions } from '../components/ui/BottomActions';
+import { Icon } from '../components/ui/Icon';
+import { PhotoGrid } from '../components/ui/PhotoGrid';
+import { PlantCard } from '../components/ui/PlantCard';
+import { ScreenLayout } from '../components/ui/ScreenLayout';
+import { TopActions } from '../components/ui/TopActions';
+import { usePlantData } from '../features/plants/data/PlantDataProvider';
+import {
+  SCREENS,
+  type HomeScreenProps,
+  type RootNavigation,
+  type SettingsDrawerParamList,
+  type TabParamList,
+} from '../navigation';
+import { MainTabBar } from '../navigation/MainTabBar';
+import { colors, layout, spacing } from '../theme';
 
-export type HomeScreenProps = {
-  safeAreaInsets: EdgeInsets;
-};
+const EMPTY_SUBTITLE_LINE_HEIGHT = 20;
 
-const LOGO_WIDTH = 138;
-const START_GRID_IMAGE_COUNT = 6;
+export function HomeScreen({ navigation }: HomeScreenProps) {
+  const rootNavigation = navigation.getParent()?.getParent<RootNavigation>();
+  const { getSpeciesById, ownedPlants } = usePlantData();
+  const plants = ownedPlants
+    .map(ownedPlant => {
+      const species = getSpeciesById(ownedPlant.speciesId);
+      if (!species) return null;
 
-export function HomeScreen({ safeAreaInsets }: HomeScreenProps) {
+      return {
+        ownedPlant,
+        species,
+      };
+    })
+    .filter(item => item != null);
+  const openSettings = React.useCallback(() => {
+    navigation.getParent<DrawerNavigationProp<SettingsDrawerParamList>>()?.openDrawer();
+  }, [navigation]);
+  const handleNavigateTab = React.useCallback(
+    (screen: keyof TabParamList) => {
+      navigation.navigate(screen);
+    },
+    [navigation],
+  );
+  const handleAddPlant = React.useCallback(() => {
+    rootNavigation?.navigate(SCREENS.ADD_PLANT_STACK);
+  }, [rootNavigation]);
+
   return (
-    <LinearGradient colors={[...gradients.appBackground]} style={styles.screen}>
-      <ScrollView
-        contentInsetAdjustmentBehavior="never"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingTop: safeAreaInsets.top + spacing.xl,
-            paddingBottom: safeAreaInsets.bottom + sizes.nav.item,
-          },
-        ]}>
-        <View style={styles.header}>
-          <Logo width={LOGO_WIDTH} />
-          <Button icon="plus" size="small" accessibilityLabel="Add plant" />
-        </View>
-
-        <View style={styles.hero}>
-          <View style={styles.heroCopy}>
-            <AppText variant="titleL">Good morning</AppText>
-            <AppText tone="highlighted">3 plants need a little care today</AppText>
+    <ScreenLayout
+      topActions={(
+        <TopActions
+          mode={plants.length > 0 ? 'hero' : 'centered'}
+          onRightPress={openSettings}
+          rightIcon="more"
+          rightLabel="Open settings"
+          title={plants.length > 0 ? 'Plant Situation' : undefined}
+        />
+      )}
+      topActionsOverlay={plants.length === 0}
+      scrollableContent
+      scrollableContentSharesTopGap={plants.length > 0}
+      contentLayout="start"
+      contentStyle={styles.content}
+      bottomActions={(
+        <BottomActions
+          bottomBar={(
+            <MainTabBar
+              activeScreen={SCREENS.HOME}
+              onAddPlant={handleAddPlant}
+              onNavigate={handleNavigateTab}
+            />
+          )}
+        />
+      )}>
+        {plants.length > 0 ? (
+          <PhotoGrid>
+            {plants.map(({ ownedPlant }) => (
+              <PlantCard
+                key={ownedPlant.ownedPlantId}
+                accessibilityLabel={`Open ${ownedPlant.customName}`}
+                image={ownedPlant.image}
+                onPress={() => {
+                  rootNavigation?.navigate(SCREENS.PLANT_DETAIL, {
+                    ownedPlantId: ownedPlant.ownedPlantId,
+                  });
+                }}
+              />
+            ))}
+          </PhotoGrid>
+        ) : (
+          <View style={styles.emptyState}>
+            <Icon color={colors.icon.green} name="plant" size="xxl" />
+            <AppText align="center" variant="titleXl">
+              Keep something alive this week
+            </AppText>
+            <AppText align="center" style={styles.emptySubtitle}>
+              Add a plant to create a watering schedule
+            </AppText>
           </View>
-          <Button icon="water" label="Start watering" />
-        </View>
-
-        <View style={styles.grid}>
-          {startGridImageItems.slice(0, START_GRID_IMAGE_COUNT).map(item => (
-            <Image key={item.id} source={item.source} resizeMode="cover" style={styles.tile} />
-          ))}
-        </View>
-      </ScrollView>
-
-      <NavBar
-        activeKey="home"
-        items={[
-          { key: 'home', icon: 'home' },
-          { key: 'plants', icon: 'plant', badgeCount: 3 },
-          { key: 'camera', icon: 'camera' },
-        ]}
-        style={[styles.nav, { bottom: safeAreaInsets.bottom + spacing.md }]}
-      />
-    </LinearGradient>
+        )}
+    </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
-    gap: layout.sectionGap,
+    flexGrow: 1,
+    gap: spacing.md,
     paddingHorizontal: layout.screenPadding,
   },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.xxs,
-  },
-  header: {
+  emptyState: {
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  hero: {
-    backgroundColor: colors.surface.white,
-    borderRadius: radii.lg,
-    gap: spacing.lg,
-    padding: spacing.xl,
-  },
-  heroCopy: {
-    gap: spacing.xs,
-  },
-  nav: {
-    alignSelf: 'center',
-    position: 'absolute',
-  },
-  screen: {
-    flex: 1,
-  },
-  tile: {
-    aspectRatio: 1,
-    borderRadius: radii.photo,
-    flexBasis: '32.5%',
     flexGrow: 1,
+    gap: spacing.md,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  emptySubtitle: {
+    lineHeight: EMPTY_SUBTITLE_LINE_HEIGHT,
   },
 });

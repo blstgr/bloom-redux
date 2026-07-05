@@ -48,22 +48,30 @@ export const All: Story = {
 
 function WithEditableTitleDemo() {
   const [value, setValue] = React.useState('ZZ plant');
+  const handleSubmit = (next: string) => {
+    setValue(next);
+    return true;
+  };
   return (
     <TopActions
       leftIcon="close"
       rightIcon="more"
-      title={<EditableTitle value={value} onChange={setValue} />}
+      title={<EditableTitle value={value} onSubmit={handleSubmit} />}
     />
   );
 }
 
 function AllDemo() {
   const [value, setValue] = React.useState('ZZ plant');
+  const handleSubmit = (next: string) => {
+    setValue(next);
+    return true;
+  };
   return (
     <View style={styles.stack}>
       <TopActions leftIcon="close" rightIcon="more" />
       <TopActions leftIcon="close" rightIcon="more" title={<AppText variant="titleM">Plant</AppText>} />
-      <TopActions leftIcon="close" rightIcon="more" title={<EditableTitle value={value} onChange={setValue} />} />
+      <TopActions leftIcon="close" rightIcon="more" title={<EditableTitle value={value} onSubmit={handleSubmit} />} />
       <TopActions rightIcon="more" />
       <TopActions leftIcon="close" />
       <TopActions mode="hero" rightIcon="more" title={<AppText variant="titleXl">Plant</AppText>} />

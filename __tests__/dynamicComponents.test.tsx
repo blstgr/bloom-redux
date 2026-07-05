@@ -85,9 +85,9 @@ describe('dynamic components', () => {
 
   it.each(['ios', 'android'] as const)('updates tab active state from data on %s', platform => {
     const items: NavItem[] = [
-      { behavior: 'tab', icon: 'home', key: 'home' },
-      { behavior: 'tab', icon: 'plant', key: 'plants', badgeCount: 3 },
-      { behavior: 'submit', icon: 'camera', key: 'camera' },
+      { icon: 'home', key: 'home' },
+      { icon: 'plant', key: 'plants', badgeCount: 3 },
+      { icon: 'camera', key: 'camera' },
     ];
 
     function InteractiveNavBar() {
@@ -97,7 +97,7 @@ describe('dynamic components', () => {
           activeKey={activeKey}
           items={items.map(item => ({
             ...item,
-            onPress: item.behavior === 'tab' ? () => setActiveKey(item.key) : item.onPress,
+            onPress: item.key !== 'camera' ? () => setActiveKey(item.key) : item.onPress,
           }))}
         />
       );
@@ -117,7 +117,7 @@ describe('dynamic components', () => {
 
     expect(updatedButtons[0].props.accessibilityState.selected).toBe(false);
     expect(updatedButtons[1].props.accessibilityState.selected).toBe(true);
-    expect(updatedButtons[2].props.accessibilityState.selected).toBe(true);
+    expect(updatedButtons[2].props.accessibilityState.selected).toBe(false);
   });
 
   it.each(['ios', 'android'] as const)('renders controlled slider states on %s', platform => {

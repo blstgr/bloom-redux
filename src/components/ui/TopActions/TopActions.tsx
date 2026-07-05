@@ -7,13 +7,7 @@ import { AppText } from '../AppText';
 import { GlassButtonSurface, GLASS_BUTTON_ACTIVE_OPACITY } from '../Button';
 import { Icon, type IconName } from '../Icon';
 
-export type TopActionsProps = {
-  mode?: 'centered' | 'hero';
-  leftAction?: ReactNode;
-  leftIcon?: IconName;
-  leftLabel?: string;
-  onClose?: () => void;
-  onLeftPress?: () => void;
+type TopActionsBaseProps = {
   onMore?: () => void;
   onRightPress?: () => void;
   rightAction?: ReactNode;
@@ -23,8 +17,29 @@ export type TopActionsProps = {
   title?: ReactNode;
 };
 
+type CenteredTopActionsProps = TopActionsBaseProps & {
+  mode?: 'centered';
+  leftAction?: ReactNode;
+  leftIcon?: IconName;
+  leftLabel?: string;
+  onClose?: () => void;
+  onLeftPress?: () => void;
+};
+
+type HeroTopActionsProps = TopActionsBaseProps & {
+  leftAction?: never;
+  leftIcon?: never;
+  leftLabel?: never;
+  mode: 'hero';
+  onClose?: never;
+  onLeftPress?: never;
+};
+
+export type TopActionsProps = CenteredTopActionsProps | HeroTopActionsProps;
+
 const TOP_ACTION_GLASS_COLOR = colors.overlay.glass;
 const TOP_ACTION_RADIUS_RATIO = 0.5;
+const HERO_TITLE_WIDTH = 198;
 
 function TopActionButton({
   icon,
@@ -64,27 +79,17 @@ function renderAction(
   return <TopActionButton icon={icon} label={label ?? icon} onPress={onPress} />;
 }
 
-export function TopActions({
-  leftAction,
-  leftIcon,
-  leftLabel,
-  mode = 'centered',
-  onClose,
-  onLeftPress,
-  onMore,
-  onRightPress,
-  rightAction,
-  rightIcon,
-  rightLabel,
-  style,
-  title,
-}: TopActionsProps) {
-  const resolvedLeftAction = renderAction(
-    leftAction,
-    leftIcon ?? (onClose ? 'close' : undefined),
-    leftLabel ?? (onClose ? 'Close' : undefined),
-    onLeftPress ?? onClose,
-  );
+export function TopActions(props: TopActionsProps) {
+  const {
+    mode = 'centered',
+    onMore,
+    onRightPress,
+    rightAction,
+    rightIcon,
+    rightLabel,
+    style,
+    title,
+  } = props;
   const resolvedRightAction = renderAction(
     rightAction,
     rightIcon ?? (onMore ? 'more' : undefined),
@@ -96,12 +101,23 @@ export function TopActions({
     return (
       <View style={[styles.heroContainer, style]}>
         <View style={styles.heroTitleWrap}>
-          {typeof title === 'string' ? <AppText variant="titleXl">{title}</AppText> : title}
+          {typeof title === 'string' ? (
+            <AppText style={styles.heroTitle} variant="titleXl">
+              {title}
+            </AppText>
+          ) : title}
         </View>
-        <View style={styles.side}>{resolvedRightAction}</View>
+        <View style={styles.heroSide}>{resolvedRightAction}</View>
       </View>
     );
   }
+
+  const resolvedLeftAction = renderAction(
+    props.leftAction,
+    props.leftIcon ?? (props.onClose ? 'close' : undefined),
+    props.leftLabel ?? (props.onClose ? 'Close' : undefined),
+    props.onLeftPress ?? props.onClose,
+  );
 
   return (
     <View style={[styles.container, style]}>
@@ -118,25 +134,33 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: sizes.button.default,
+    gap: spacing.md,
+    minHeight: sizes.button.small,
     width: '100%',
   },
   heroContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     flexDirection: 'row',
-    gap: spacing.md,
-    minHeight: sizes.button.default,
+    justifyContent: 'space-between',
     width: '100%',
+  },
+  heroSide: {
+    alignItems: 'center',
+    height: sizes.button.small,
+    justifyContent: 'center',
+    width: sizes.button.small,
+  },
+  heroTitle: {
+    width: HERO_TITLE_WIDTH,
   },
   heroTitleWrap: {
     flex: 1,
   },
   side: {
     alignItems: 'center',
-    height: sizes.button.default,
+    height: sizes.button.small,
     justifyContent: 'center',
-    width: sizes.button.default,
+    width: sizes.button.small,
   },
   topActionButtonWrap: {
     height: sizes.button.small,
@@ -152,10 +176,7 @@ const styles = StyleSheet.create({
   },
   titleWrap: {
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
-    left: sizes.button.default + spacing.sm,
-    maxWidth: '100%',
-    position: 'absolute',
-    right: sizes.button.default + spacing.sm,
   },
 });

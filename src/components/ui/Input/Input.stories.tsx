@@ -90,6 +90,40 @@ function InteractiveInput() {
         type="email"
         value="plantkiller@gmail.com"
       />
+      <Input
+        accessibilityLabel="Search plants"
+        actions={[
+          {
+            accessibilityLabel: 'Open camera',
+            icon: 'camera',
+            key: 'open-camera',
+            onPress: () => {},
+          },
+        ]}
+        leadingIcon="search"
+        onChangeText={() => {}}
+        value=""
+      />
+      <Input
+        accessibilityLabel="Search plants"
+        actions={[
+          {
+            accessibilityLabel: 'Clear search',
+            icon: 'close',
+            key: 'clear-search',
+            onPress: () => {},
+          },
+          {
+            accessibilityLabel: 'Open camera',
+            icon: 'camera',
+            key: 'open-camera',
+            onPress: () => {},
+          },
+        ]}
+        leadingIcon="search"
+        onChangeText={() => {}}
+        value="ZZ plant"
+      />
     </View>
   );
 }

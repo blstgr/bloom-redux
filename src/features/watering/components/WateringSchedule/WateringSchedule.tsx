@@ -46,7 +46,7 @@ export function WateringSchedule({
 
 const styles = StyleSheet.create({
   container: {
-    gap: spacing.lg,
+    gap: spacing.md,
     width: '100%',
   },
   dates: {

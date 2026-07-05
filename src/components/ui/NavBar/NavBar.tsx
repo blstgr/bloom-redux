@@ -8,22 +8,21 @@ import { SegmentedBarBase } from '../SegmentedBarBase';
 
 import { NavBarItem } from './NavBarItem';
 
-export type NavItem = {
+export type NavItem<Key extends string = string> = {
   accessibilityLabel?: string;
-  behavior?: 'route' | 'submit' | 'tab';
   badgeCount?: number;
   icon: IconName;
-  key: string;
+  key: Key;
   onPress?: () => void;
 };
 
-export type NavBarProps = {
-  activeKey?: string;
-  items: NavItem[];
+export type NavBarProps<Key extends string = string> = {
+  activeKey?: Key;
+  items: NavItem<Key>[];
   style?: StyleProp<ViewStyle>;
 };
 
-export function NavBar({ activeKey, items, style }: NavBarProps) {
+export function NavBar<Key extends string = string>({ activeKey, items, style }: NavBarProps<Key>) {
   const itemLayouts = React.useRef<Record<string, LayoutRectangle>>({});
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
 
@@ -31,7 +30,6 @@ export function NavBar({ activeKey, items, style }: NavBarProps) {
     <View style={[styles.wrap, style]}>
       <SegmentedBarBase>
         {items.map(item => (
-          // Only tab behaviors participate in selected/active visual state.
           <View
             key={item.key}
             onLayout={e => {
@@ -40,11 +38,7 @@ export function NavBar({ activeKey, items, style }: NavBarProps) {
             }}>
             <NavBarItem
               accessibilityLabel={item.accessibilityLabel ?? item.key}
-              active={
-                item.behavior !== 'route' && (
-                  item.key === activeKey || item.behavior === 'submit'
-                )
-              }
+              active={item.key === activeKey}
               icon={item.icon}
               onPress={item.onPress}
             />

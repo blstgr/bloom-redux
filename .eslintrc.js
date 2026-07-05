@@ -15,9 +15,11 @@ const BARREL_INTERNALS = {
   Loader: ['Loader'],
   Logo: ['Logo'],
   NavBar: ['NavBar', 'NavBarItem'],
-  PhotoGrid: ['PhotoGrid', 'PhotoGridItem', 'types'],
+  navigation: ['types'],
+  PhotoGrid: ['PhotoGrid'],
   PlantCard: ['PlantCard'],
   PlantDetail: ['PlantDetail'],
+  ScreenLayout: ['ScreenLayout'],
   SegmentedBarBase: ['SegmentedBarBase'],
   SettingsPanel: ['SettingsPanel', 'SettingsRow'],
   StartScreenAssets: ['StartScreenAssets'],
@@ -74,15 +76,27 @@ module.exports = {
     {
       // Catches magic numbers in component/screen style & layout code.
       // Exceptions match the project's 9+ rubric: 0, 1, 100, -1.
+      // detectObjects is on so StyleSheet.create({...}) values (fontSize, opacity,
+      // gap, etc.) are checked too — they're exempt by default because their AST
+      // parent is a plain object Property, which is the majority of where magic
+      // numbers actually show up in this codebase's UI code.
+      // Note: ESLint's no-magic-numbers unconditionally exempts numeric JSX attribute
+      // values (e.g. `scrollEventThrottle={16}`) — that's hardcoded in the rule itself
+      // (see isJSXNumber in eslint's no-magic-numbers.js) with no option to disable it,
+      // so this still won't catch those; needs a custom rule if that gap matters enough
+      // to close, it can't be done via config.
       files: ['src/components/**/*.{ts,tsx}', 'src/features/**/*.{ts,tsx}', 'src/screens/**/*.{ts,tsx}'],
-      excludedFiles: ['**/*.stories.tsx', '**/*.test.tsx'],
+      // data/** holds literal domain values (e.g. a species' wateringIntervalDays) —
+      // those are content, not unnamed style/layout constants, so they're excluded
+      // the same way stories/tests are.
+      excludedFiles: ['**/*.stories.tsx', '**/*.test.tsx', '**/data/**'],
       rules: {
         'no-magic-numbers': [
           'error',
           {
             ignore: [0, 1, -1, 100],
             ignoreArrayIndexes: true,
-            detectObjects: false,
+            detectObjects: true,
             enforceConst: false,
           },
         ],

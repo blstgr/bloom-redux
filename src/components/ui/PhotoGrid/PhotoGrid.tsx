@@ -117,6 +117,15 @@ function getGridItemKey(item: ReactNode, index: number) {
   return `photo-grid-item-${index}`;
 }
 
+function resolveColumnCount(requestedColumns: number, itemCount: number) {
+  const roundedColumns = Number.isFinite(requestedColumns)
+    ? Math.round(requestedColumns)
+    : SINGLE_SPAN;
+  const maxColumns = Math.max(SINGLE_SPAN, itemCount);
+
+  return Math.min(maxColumns, Math.max(SINGLE_SPAN, roundedColumns));
+}
+
 export function PhotoGrid({
   columns,
   children,
@@ -129,8 +138,10 @@ export function PhotoGrid({
   const [containerWidth, setContainerWidth] = React.useState<number | null>(null);
   const items = React.Children.toArray(children);
   const count = items.length;
-  const resolvedColumns =
+  const requestedColumns =
     columns ?? (count <= DOUBLE_SPAN ? SINGLE_SPAN : count === TRIPLE_SPAN ? DOUBLE_SPAN : TRIPLE_SPAN);
+  const resolvedColumns = resolveColumnCount(requestedColumns, count);
+
   const availableWidth = containerWidth ?? width - spacing.md * GRID_HORIZONTAL_MARGIN_COUNT;
   const gridWidth = Math.min(availableWidth, maxWidth);
   const itemWidth = (gridWidth - gap * (resolvedColumns - SINGLE_SPAN)) / resolvedColumns;
@@ -145,39 +156,44 @@ export function PhotoGrid({
         const nextWidth = Math.floor(event.nativeEvent.layout.width);
         if (nextWidth > 0 && nextWidth !== containerWidth) setContainerWidth(nextWidth);
       }}
-      // eslint-disable-next-line react-native/no-inline-styles
-      style={[styles.grid, { gap, width: '100%' }, style]}>
-      {items.map((item, index) => {
-        let itemSpan = SINGLE_SPAN;
-        const isLast = index === count - 1;
+      style={[styles.measure, style]}>
+      <View style={[styles.grid, { gap, width: gridWidth }]}>
+        {items.map((item, index) => {
+          let itemSpan = SINGLE_SPAN;
+          const isLast = index === count - 1;
 
-        if (resolvedColumns === TRIPLE_SPAN) {
-          itemSpan = randomSpans[index] ?? SINGLE_SPAN;
-          if (isLast && count > resolvedColumns) itemSpan = TRIPLE_SPAN;
-        } else if (resolvedColumns > SINGLE_SPAN && count > resolvedColumns && count % resolvedColumns !== 0) {
-          if (isLast) itemSpan = resolvedColumns;
-        }
+          if (resolvedColumns === TRIPLE_SPAN) {
+            itemSpan = randomSpans[index] ?? SINGLE_SPAN;
+            if (isLast && count > resolvedColumns) itemSpan = TRIPLE_SPAN;
+          } else if (resolvedColumns > SINGLE_SPAN && count > resolvedColumns && count % resolvedColumns !== 0) {
+            if (isLast) itemSpan = resolvedColumns;
+          }
 
-        const widthForItem =
+          const widthForItem =
             itemSpan === resolvedColumns
-            ? gridWidth
-            : itemSpan === DOUBLE_SPAN
-              ? itemWidth * DOUBLE_SPAN + gap
-              : itemWidth;
+              ? gridWidth
+              : itemSpan === DOUBLE_SPAN
+                ? itemWidth * DOUBLE_SPAN + gap
+                : itemWidth;
 
-        return (
-          <View key={getGridItemKey(item, index)} style={{ width: widthForItem }}>
-            {item}
-          </View>
-        );
-      })}
+          return (
+            <View key={getGridItemKey(item, index)} style={{ width: widthForItem }}>
+              {item}
+            </View>
+          );
+        })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   grid: {
+    alignSelf: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
+  },
+  measure: {
+    width: '100%',
   },
 });

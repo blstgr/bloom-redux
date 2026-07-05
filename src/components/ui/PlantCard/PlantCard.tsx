@@ -1,5 +1,13 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, View, type ImageSourcePropType } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  View,
+  type ImageSourcePropType,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { radii, spacing } from '../../../theme';
 import { Badge } from '../Badge';
@@ -24,16 +32,23 @@ export type PlantCardProps = {
   badge?: PlantCardBadge;
   image: ImageSourcePropType;
   onPress?: () => void;
+  style?: StyleProp<ViewStyle>;
 };
 
-export function PlantCard({ accessibilityLabel, badge, image, onPress }: PlantCardProps) {
+export function PlantCard({
+  accessibilityLabel,
+  badge,
+  image,
+  onPress,
+  style,
+}: PlantCardProps) {
   return (
     <Pressable
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
       onPress={onPress}
-      style={styles.card}>
-      <Image source={image} style={styles.image} />
+      style={[styles.card, style]}>
+      <Image resizeMode="cover" source={image} style={styles.image} />
       {badge ? (
         <View style={styles.badge}>
           {badge.type === 'badge' ? (

@@ -1,66 +1,149 @@
 import React from 'react';
-import { StyleSheet, TextInput, View } from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+  type GestureResponderEvent,
+} from 'react-native';
 
-import { colors, radii, shadows, sizes, spacing, typography } from '../../../theme';
+import { colors, radii, sizes, spacing, typography } from '../../../theme';
 import { AppText } from '../AppText';
-import { Icon, type IconName } from '../Icon';
+import { GlassView } from '../GlassView';
+import { Icon, type IconName, type IconSize } from '../Icon';
 
 export type InputType = 'text' | 'email' | 'password' | 'number';
 
+export type InputAction = {
+  accessibilityLabel: string;
+  disabled?: boolean;
+  icon: IconName;
+  iconSize?: IconSize;
+  key: string;
+  onPress: (event: GestureResponderEvent) => void;
+};
+
+export type InputActions = [] | [InputAction] | [InputAction, InputAction];
+
 export type InputProps = {
+  accessibilityLabel?: string;
+  actions?: InputActions;
   disabled?: boolean;
   error?: string;
+  leadingIcon?: IconName;
+  leadingIconSize?: IconSize;
   labelIcon?: IconName;
-  label: string;
+  label?: string;
   onBlur?: () => void;
   onChangeText: (value: string) => void;
+  onFocus?: () => void;
   placeholder?: string;
-  type: InputType;
+  type?: InputType;
   value: string;
 };
 
 export function Input({
+  accessibilityLabel,
+  actions = [],
   disabled = false,
   error,
+  leadingIcon,
+  leadingIconSize = 'sm',
   labelIcon,
   label,
   onBlur,
   onChangeText,
+  onFocus,
   placeholder,
-  type,
+  type = 'text',
   value,
 }: InputProps) {
   const [isFocused, setIsFocused] = React.useState(false);
+  const inputRef = React.useRef<TextInput>(null);
+  const visibleActions = actions.slice(0, MAX_INPUT_ACTIONS);
+  const resolvedAccessibilityLabel = firstNonEmptyText(accessibilityLabel, label, placeholder) ?? 'Input';
+  const hasLabelRow = firstNonEmptyText(label) != null || labelIcon != null;
 
   return (
     <View style={styles.container}>
-      <View style={styles.labelRow}>
-        {labelIcon ? <Icon name={labelIcon} /> : null}
-        <AppText variant="titleS">{label}</AppText>
-      </View>
-      <View style={[styles.inputWrapper, isFocused && styles.inputWrapperFocused]}>
-        <TextInput
-          accessibilityLabel={label}
-          editable={!disabled}
-          keyboardType={type === 'number' ? 'numeric' : type === 'email' ? 'email-address' : 'default'}
-          onBlur={() => {
-            setIsFocused(false);
-            onBlur?.();
-          }}
-          onChangeText={onChangeText}
-          onFocus={() => setIsFocused(true)}
-          placeholder={placeholder}
-          placeholderTextColor={colors.text.placeholder}
-          secureTextEntry={type === 'password'}
+      {hasLabelRow ? (
+        <View style={styles.labelRow}>
+          {labelIcon ? <Icon name={labelIcon} /> : null}
+          {label ? <AppText variant="titleS">{label}</AppText> : null}
+        </View>
+      ) : null}
+      <GlassView
+        fallbackColor={colors.surface.creamWarm}
+        radius={radii.pill}
+        shadow={isFocused}
+        style={styles.inputShadowWrap}
+        tintColor={colors.surface.creamWarm}
+      >
+        <View
           style={[
-            styles.input,
-            isFocused && styles.inputFocused,
-            disabled && styles.inputDisabled,
-            Boolean(error) && styles.inputError,
-          ]}
-          value={value}
-        />
-      </View>
+            styles.inputWrapper,
+            Boolean(error) && styles.inputWrapperError,
+            disabled && styles.inputWrapperDisabled,
+          ]}>
+          {leadingIcon ? (
+            <View style={styles.leadingIconSlot}>
+              <Icon
+                color={disabled ? colors.action.disabled : colors.icon.primary}
+                name={leadingIcon}
+                size={leadingIconSize}
+              />
+            </View>
+          ) : null}
+          <TextInput
+            ref={inputRef}
+            accessibilityLabel={resolvedAccessibilityLabel}
+            blurOnSubmit
+            editable={!disabled}
+            keyboardType={type === 'number' ? 'numeric' : type === 'email' ? 'email-address' : 'default'}
+            multiline={false}
+            onBlur={() => {
+              setIsFocused(false);
+              onBlur?.();
+            }}
+            onChangeText={onChangeText}
+            onFocus={() => {
+              setIsFocused(true);
+              onFocus?.();
+            }}
+            placeholder={placeholder}
+            placeholderTextColor={disabled ? colors.action.disabled : colors.text.highlighted}
+            secureTextEntry={type === 'password'}
+            style={[
+              styles.input,
+              !leadingIcon && styles.inputLeadingPadding,
+              visibleActions.length === 0 && styles.inputTrailingPadding,
+              isFocused && styles.inputFocused,
+              disabled && styles.inputDisabled,
+            ]}
+            value={value}
+          />
+          {visibleActions.length > 0 ? (
+            <View style={styles.actions}>
+              {visibleActions.map(action => (
+                <TouchableOpacity
+                  accessibilityLabel={action.accessibilityLabel}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: disabled || action.disabled }}
+                  disabled={disabled || action.disabled}
+                  key={action.key}
+                  onPress={action.onPress}
+                  style={styles.actionButton}>
+                  <Icon
+                    color={disabled || action.disabled ? colors.action.disabled : colors.icon.primary}
+                    name={action.icon}
+                    size={action.iconSize ?? 'sm'}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      </GlassView>
       {error ? (
         <AppText variant="body" style={styles.errorText}>
           {error}
@@ -68,6 +151,13 @@ export function Input({
       ) : null}
     </View>
   );
+}
+
+const MAX_INPUT_ACTIONS = 2;
+const DISABLED_INPUT_OPACITY = 0.64;
+
+function firstNonEmptyText(...values: Array<string | undefined>) {
+  return values.find(value => value != null && value.length > 0);
 }
 
 const styles = StyleSheet.create({
@@ -83,30 +173,70 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.xxs,
   },
-  inputWrapper: {
+  // Shadow lives on this outer wrap, never on inputWrapper itself — inputWrapper needs
+  // overflow: 'hidden' to clip to the pill shape, which would also clip a shadow placed on
+  // the same view. Toggling that combination in response to focus is what was destabilizing
+  // the native keyboard session right as it tried to present.
+  inputShadowWrap: {
     borderRadius: radii.pill,
   },
-  inputWrapperFocused: {
-    ...shadows.soft,
+  inputWrapper: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    height: sizes.input.height,
   },
-  input: {
-    borderColor: colors.text.placeholder,
+  inputWrapperDisabled: {
+    opacity: DISABLED_INPUT_OPACITY,
+  },
+  inputWrapperError: {
+    borderColor: colors.brand.orange,
     borderRadius: radii.pill,
     borderWidth: sizes.border.thin,
+  },
+  input: {
     color: colors.text.primary,
+    flex: 1,
     fontFamily: typography.body.fontFamily,
     fontSize: typography.body.fontSize,
     height: sizes.input.height,
-    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.none,
+  },
+  // Only add horizontal breathing room on an edge that isn't already padded by an
+  // adjacent leadingIcon slot or action button.
+  inputLeadingPadding: {
+    paddingLeft: spacing.xs,
+  },
+  inputTrailingPadding: {
+    paddingRight: spacing.xs,
   },
   inputDisabled: {
     color: colors.action.disabled,
   },
-  inputError: {
-    borderColor: colors.brand.orange,
-  },
   inputFocused: {
-    backgroundColor: colors.surface.white,
-    borderColor: colors.text.placeholder,
+    color: colors.text.primary,
+  },
+  actions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  actionButton: {
+    alignItems: 'center',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: radii.pill,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: radii.pill,
+    height: sizes.input.height,
+    justifyContent: 'center',
+    width: sizes.input.height,
+  },
+  leadingIconSlot: {
+    alignItems: 'center',
+    borderBottomLeftRadius: radii.pill,
+    borderBottomRightRadius: 0,
+    borderTopLeftRadius: radii.pill,
+    borderTopRightRadius: 0,
+    height: sizes.input.height,
+    justifyContent: 'center',
+    width: sizes.input.height,
   },
 });

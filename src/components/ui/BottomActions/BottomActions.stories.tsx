@@ -11,8 +11,8 @@ import { BottomActions } from './BottomActions';
 
 // Tab-only nav: home + water.
 const tabItems: NavItem[] = [
-  { key: 'home',     icon: 'home',  behavior: 'tab' },
-  { key: 'watering', icon: 'water', behavior: 'tab', badgeCount: 3 },
+  { key: 'home', icon: 'home' },
+  { key: 'watering', icon: 'water', badgeCount: 3 },
 ];
 
 // Tabs respond to taps; clicking the active tab deselects it.
@@ -20,9 +20,8 @@ function InteractiveNavBar({ items, initialKey }: { items: NavItem[]; initialKey
   const [activeKey, setActiveKey] = React.useState<string | undefined>(initialKey);
   const interactive = items.map(item => ({
     ...item,
-    onPress: item.behavior === 'tab'
-      ? () => setActiveKey(prev => prev === item.key ? undefined : item.key)
-      : item.onPress,
+    onPress: () =>
+      setActiveKey(prev => prev === item.key ? undefined : item.key),
   }));
   return <NavBarComponent activeKey={activeKey} items={interactive} />;
 }

@@ -5,12 +5,15 @@ import { Platform, StyleSheet, View, type StyleProp, type ViewStyle } from 'reac
 import { colors, gradients, radii, shadows } from '../../../theme';
 import { GradientBorder } from '../GradientBorder';
 
+const GLASS_BLUR_AMOUNT = 4;
+
 export type GlassViewProps = {
   border?: boolean;
   children?: React.ReactNode;
   containerColor?: string;
   fallbackColor?: string;
   radius?: number;
+  shadow?: boolean;
   style?: StyleProp<ViewStyle>;
   tintColor?: string;
 };
@@ -21,6 +24,7 @@ export function GlassView({
   containerColor = colors.overlay.glass,
   fallbackColor = colors.surface.white,
   radius = radii.pill,
+  shadow = true,
   style,
   tintColor = colors.overlay.glass,
 }: GlassViewProps) {
@@ -30,7 +34,7 @@ export function GlassView({
         <View style={[StyleSheet.absoluteFill, { backgroundColor: fallbackColor }]} />
       ) : (
         <BlurView
-          blurAmount={4}
+          blurAmount={GLASS_BLUR_AMOUNT}
           blurType="ultraThinMaterialLight"
           reducedTransparencyFallbackColor={fallbackColor}
           style={StyleSheet.absoluteFill}
@@ -43,20 +47,28 @@ export function GlassView({
 
   if (!border) {
     return (
-      <View style={[styles.borderless, { backgroundColor: containerColor }, style]}>
-        {blurAndTint}
+      <View style={[shadow && shadows.soft, { borderRadius: radius }, style]}>
+        <View style={[styles.borderless, { backgroundColor: containerColor, borderRadius: radius }]}>
+          {blurAndTint}
+        </View>
       </View>
     );
   }
 
   return (
-    <GradientBorder
-      borderRadius={radius}
-      colors={[...gradients.glassBorder]}
-      style={[shadows.soft, { backgroundColor: containerColor }, style]}
-    >
-      {blurAndTint}
-    </GradientBorder>
+    // Shadow lives on this plain View, not on GradientBorder's LinearGradient: a shadow
+    // needs an unclipped plain View to render on — LinearGradient is a third-party native
+    // component that doesn't support the boxShadow style, and GradientBorder's own inner
+    // View clips to the pill shape, which would also clip a shadow placed on the same layer.
+    <View style={[shadow && shadows.soft, { borderRadius: radius }, style]}>
+      <GradientBorder
+        borderRadius={radius}
+        colors={[...gradients.glassBorder]}
+        style={{ backgroundColor: containerColor }}
+      >
+        {blurAndTint}
+      </GradientBorder>
+    </View>
   );
 }
 

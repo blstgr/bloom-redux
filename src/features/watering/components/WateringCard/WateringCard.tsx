@@ -1,5 +1,12 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  useWindowDimensions,
+  View,
+  type ImageSourcePropType,
+} from 'react-native';
 import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import Reanimated, {
   interpolate,
@@ -26,7 +33,7 @@ const REVEAL_CHECK_FADE_MID = 0.2;
 export type WateringCardProps = {
   accessibilityLabel: string;
   day: string;
-  imageUrl: string;
+  image: ImageSourcePropType;
   month: string;
   onDismiss?: () => void;
   onPress?: () => void;
@@ -35,7 +42,7 @@ export type WateringCardProps = {
 export function WateringCard({
   accessibilityLabel,
   day,
-  imageUrl,
+  image,
   month,
   onDismiss,
   onPress,
@@ -78,7 +85,11 @@ export function WateringCard({
         accessibilityRole="button"
         onPress={onPress}
         style={[styles.card, { width: cardWidth }]}>
-        <Image source={{ uri: imageUrl }} style={[styles.image, { width: cardWidth }]} />
+        <Image
+          resizeMode="cover"
+          source={image}
+          style={[styles.image, { width: cardWidth }]}
+        />
         <View pointerEvents="none" style={styles.badge}>
           <BadgePill day={day} icon="water" month={month} variant="inverted" />
         </View>
@@ -124,8 +135,10 @@ function RightActionReveal({
 
 const styles = StyleSheet.create({
   badge: {
-    position: 'absolute',
+    bottom: spacing.md,
+    justifyContent: 'center',
     right: spacing.md,
+    position: 'absolute',
     top: spacing.md,
   },
   container: {

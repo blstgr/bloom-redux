@@ -14,13 +14,21 @@ type Story = StoryObj<typeof meta>;
 
 function EditableTitleWithState() {
   const [value, setValue] = React.useState('ZZ plant');
-  return <EditableTitle value={value} onChange={setValue} />;
+  return (
+    <EditableTitle
+      value={value}
+      onSubmit={next => {
+        setValue(next);
+        return true;
+      }}
+    />
+  );
 }
 
 export const Default: Story = {
   args: {
     value: 'ZZ plant',
-    onChange: () => {},
+    onSubmit: () => true,
   },
   render: () => <EditableTitleWithState />,
 };

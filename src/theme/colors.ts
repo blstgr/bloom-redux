@@ -1,10 +1,11 @@
 // Single source of truth for raw color values.
 const palette = {
   dark:   '#2E2B28',
-  green:  '#548A5C',
+  green:  '#46764D',
   mist:   '#B9C7B2',
   orange: '#C2531C',
   peach:  '#FBE5D8',
+  creamWarm: '#FCF2E6',
   cream:  '#EDE9E1',
   white:  '#FFFFFF',
 } as const;
@@ -23,6 +24,7 @@ export const colors = {
   },
   surface: {
     white: palette.white,
+    creamWarm: palette.creamWarm,
     glass: 'rgba(255, 255, 255, 0.5)',
     dark:  palette.dark,
   },
@@ -46,7 +48,9 @@ export const colors = {
   overlay: {
     dim:   'rgba(46, 43, 40, 0.18)',   // Loader dark overlay
     frost: 'rgba(255, 255, 255, 0.45)', // Loader light overlay
-    glass: 'rgba(255, 255, 255, 0.2)',  // GlassView background/tint
+    glass: 'rgba(255, 255, 255, 0.08)', // GlassView background/tint — kept low since the iOS
+                                         // system material this layers on already bakes in its
+                                         // own opacity; stacking a strong tint on top compounds.
     scrim: 'rgba(0, 0, 0, 0.2)',        // AlertModal backdrop
   },
 } as const;

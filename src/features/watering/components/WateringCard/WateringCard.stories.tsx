@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { startGridImageItems } from '../../../../assets/start';
 import { Button } from '../../../../components/ui/Button';
 import { spacing } from '../../../../theme';
 
@@ -14,7 +15,7 @@ const meta = {
     accessibilityLabel: 'Open watering reminder for ZZ plant',
     day: '15',
     month: 'May',
-    imageUrl: 'https://images.unsplash.com/photo-1521334884684-d80222895322?w=900',
+    image: startGridImageItems[2].source,
   },
 } satisfies Meta<typeof WateringCard>;
 

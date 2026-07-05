@@ -29,7 +29,7 @@ export const sizes = {
     pill: 48,
   },
   input: {
-    height: 42,
+    height: 44,
   },
   modal: {
     maxWidth: 284,

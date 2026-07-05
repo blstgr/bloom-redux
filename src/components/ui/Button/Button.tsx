@@ -46,6 +46,8 @@ type ButtonTextProps = ButtonBaseProps & {
 
 export type ButtonProps = ButtonIconOnlyProps | ButtonTextProps;
 
+const DISABLED_CONTENT_OPACITY = 0.48;
+
 export function Button({
   disabled,
   icon,
@@ -96,54 +98,67 @@ export function Button({
     </View>
   );
 
+  // Shadow lives on this outer wrapper, never on the same View doing the pill-shape
+  // clipping (overflow: 'hidden' always clips a shadow rendered on that same layer).
+  const shadowOuterStyle = [styles.shadowOuter, layout === 'fill' && styles.shadowWrapperFill, style];
+
   if (isPrimary) {
     return (
-      <View style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill, style]}>
-        <GradientBorder
-          borderRadius={radii.pill}
-          colors={[...gradients.glassBorder]}
-          style={styles.buttonSurface}>
-          <TouchableOpacity
-            activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
-            accessibilityRole="button"
-            accessibilityState={{ busy: loading, disabled: isDisabled }}
-            disabled={isDisabled}
-            style={[...touchableStyle, styles.primary]}
-            onLayout={event => setButtonLayout(event.nativeEvent.layout)}
-            {...pressableProps}>
-            {content}
-          </TouchableOpacity>
-        </GradientBorder>
+      <View style={shadowOuterStyle}>
+        <View style={[styles.shadowWrapper, styles.shadowWrapperOpaque]}>
+          <GradientBorder
+            borderRadius={radii.pill}
+            colors={[...gradients.glassBorder]}
+            style={styles.buttonSurface}>
+            <TouchableOpacity
+              activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
+              accessibilityRole="button"
+              accessibilityState={{ busy: loading, disabled: isDisabled }}
+              disabled={isDisabled}
+              style={[...touchableStyle, styles.primary]}
+              onLayout={event => setButtonLayout(event.nativeEvent.layout)}
+              {...pressableProps}>
+              {content}
+            </TouchableOpacity>
+          </GradientBorder>
+        </View>
       </View>
     );
   }
 
   return (
-    <GlassButtonSurface
-      glassColor={colors.surface.glass}
-      onLayout={setButtonLayout}
-      style={[styles.shadowWrapper, layout === 'fill' && styles.shadowWrapperFill, style]}>
-      <TouchableOpacity
-        activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
-        accessibilityRole="button"
-        accessibilityState={{ busy: loading, disabled: isDisabled }}
-        disabled={isDisabled}
-        style={[...touchableStyle, styles.glass]}
-        {...pressableProps}>
-        {content}
-      </TouchableOpacity>
-    </GlassButtonSurface>
+    <View style={shadowOuterStyle}>
+      <GlassButtonSurface
+        glassColor={colors.overlay.glass}
+        onLayout={setButtonLayout}
+        style={styles.shadowWrapper}>
+        <TouchableOpacity
+          activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
+          accessibilityRole="button"
+          accessibilityState={{ busy: loading, disabled: isDisabled }}
+          disabled={isDisabled}
+          style={[...touchableStyle, styles.glass]}
+          {...pressableProps}>
+          {content}
+        </TouchableOpacity>
+      </GlassButtonSurface>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  shadowWrapper: {
+  shadowOuter: {
     alignSelf: 'flex-start',
-    backgroundColor: colors.surface.white,
+    borderRadius: radii.pill,
+    ...shadows.soft,
+  },
+  shadowWrapper: {
     borderRadius: radii.pill,
     overflow: 'hidden',
     position: 'relative',
-    ...shadows.soft,
+  },
+  shadowWrapperOpaque: {
+    backgroundColor: colors.surface.white,
   },
   shadowWrapperFill: {
     width: '100%',
@@ -165,7 +180,7 @@ const styles = StyleSheet.create({
     overflow: 'visible',
   },
   contentDisabled: {
-    opacity: 0.48,
+    opacity: DISABLED_CONTENT_OPACITY,
   },
   content: {
     alignItems: 'center',

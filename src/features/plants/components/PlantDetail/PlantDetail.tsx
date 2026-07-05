@@ -1,37 +1,72 @@
 import React from 'react';
-import { Image, StyleSheet, useWindowDimensions, View } from 'react-native';
+import {
+  ImageBackground,
+  StyleSheet,
+  View,
+  type ImageSourcePropType,
+} from 'react-native';
 
 import { AppText } from '../../../../components/ui/AppText';
-import { colors, layout, spacing } from '../../../../theme';
+import { EditableTitle } from '../../../../components/ui/EditableTitle';
+import { layout, spacing } from '../../../../theme';
 
-export type PlantDetailProps = {
+type PlantDetailBaseProps = {
   category: string;
   description: string;
-  imageUrl: string;
+  image: ImageSourcePropType;
   name: string;
+  schedule?: React.ReactNode;
 };
 
-const MAX_IMAGE_HEIGHT = 326;
-const IMAGE_HEIGHT_RATIO = 0.38;
+type ReadonlyPlantDetailProps = PlantDetailBaseProps & {
+  nameMaxLength?: never;
+  onNameSubmit?: never;
+};
+
+type EditablePlantDetailProps = PlantDetailBaseProps & {
+  nameMaxLength?: number;
+  onNameSubmit: (value: string) => boolean;
+};
+
+export type PlantDetailProps = ReadonlyPlantDetailProps | EditablePlantDetailProps;
+
+const MIN_DETAIL_IMAGE_HEIGHT = 260;
 
 export function PlantDetail({
   category,
   description,
-  imageUrl,
+  image,
   name,
+  nameMaxLength,
+  onNameSubmit,
+  schedule,
 }: PlantDetailProps) {
-  const { height } = useWindowDimensions();
-  const imageHeight = Math.min(height * IMAGE_HEIGHT_RATIO, MAX_IMAGE_HEIGHT);
-
   return (
     <View style={styles.container}>
-      <Image source={{ uri: imageUrl }} style={[styles.image, { height: imageHeight }]} />
+      <ImageBackground
+        resizeMode="cover"
+        source={image}
+        style={styles.imageFrame}
+      />
       <View style={styles.content}>
-        <View style={styles.titleStack}>
-          <AppText variant="titleXl">{name}</AppText>
-          <AppText tone="highlighted">{category}</AppText>
+        <View style={styles.copy}>
+          <View style={styles.titleStack}>
+            {onNameSubmit ? (
+              <EditableTitle
+                align="left"
+                maxLength={nameMaxLength}
+                onSubmit={onNameSubmit}
+                value={name}
+                variant="titleXl"
+              />
+            ) : (
+              <AppText variant="titleXl">{name}</AppText>
+            )}
+            <AppText tone="highlighted">{category}</AppText>
+          </View>
+          <AppText>{description}</AppText>
         </View>
-        <AppText ellipsizeMode="tail" numberOfLines={3}>{description}</AppText>
+        {schedule ? <View style={styles.schedule}>{schedule}</View> : null}
       </View>
     </View>
   );
@@ -39,16 +74,25 @@ export function PlantDetail({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: colors.surface.white,
+    flex: 1,
+    justifyContent: 'flex-end',
     width: '100%',
   },
   content: {
-    gap: spacing.md,
+    gap: spacing.xxl,
     paddingHorizontal: layout.screenPadding,
-    paddingVertical: spacing.xxl,
+    paddingTop: spacing.xxl,
   },
-  image: {
-    backgroundColor: colors.surface.white,
+  copy: {
+    gap: spacing.md,
+  },
+  imageFrame: {
+    flex: 1,
+    minHeight: MIN_DETAIL_IMAGE_HEIGHT,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  schedule: {
     width: '100%',
   },
   titleStack: {

@@ -12,12 +12,15 @@ import FlashIcon from '../../../assets/icons/flash.svg';
 import GoogleIcon from '../../../assets/icons/google.svg';
 import HomeIcon from '../../../assets/icons/home.svg';
 import InfoIcon from '../../../assets/icons/info.svg';
+import LibraryIcon from '../../../assets/icons/library.svg';
 import MinusIcon from '../../../assets/icons/minus.svg';
 import MoreIcon from '../../../assets/icons/more.svg';
 import PlantIcon from '../../../assets/icons/plant.svg';
 import PlusIcon from '../../../assets/icons/plus.svg';
 import RepeatIcon from '../../../assets/icons/repeat.svg';
 import ScheduleIcon from '../../../assets/icons/schedule.svg';
+import SearchIcon from '../../../assets/icons/search.svg';
+import SunIcon from '../../../assets/icons/sun.svg';
 import TrashIcon from '../../../assets/icons/trash.svg';
 import WaterIcon from '../../../assets/icons/water.svg';
 import { colors, sizes } from '../../../theme';
@@ -35,12 +38,15 @@ export type IconName =
   | 'google'
   | 'home'
   | 'info'
+  | 'library'
   | 'minus'
   | 'more'
   | 'plant'
   | 'plus'
   | 'repeat'
   | 'schedule'
+  | 'search'
+  | 'sun'
   | 'trash'
   | 'water';
 
@@ -75,12 +81,15 @@ const iconComponents: Record<IconName, React.ComponentType<SvgProps>> = {
   google: GoogleIcon,
   home: HomeIcon,
   info: InfoIcon,
+  library: LibraryIcon,
   minus: MinusIcon,
   more: MoreIcon,
   plant: PlantIcon,
   plus: PlusIcon,
   repeat: RepeatIcon,
   schedule: ScheduleIcon,
+  search: SearchIcon,
+  sun: SunIcon,
   trash: TrashIcon,
   water: WaterIcon,
 };

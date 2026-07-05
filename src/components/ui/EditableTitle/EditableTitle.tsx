@@ -1,31 +1,49 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-import { colors, spacing, typography } from '../../../theme';
+import { colors, sizes, spacing, typography } from '../../../theme';
 import { Icon } from '../Icon';
 
-const EDITABLE_TITLE_LINE_HEIGHT = typography.titleM.lineHeight;
-const SINGLE_LINE_HEIGHT = EDITABLE_TITLE_LINE_HEIGHT;
+// Reserve space for the trailing edit icon + gap when bounding the text's wrap width, so the
+// row hugs the text's *actual* rendered (post-wrap) size instead of the full available width.
+const EDIT_ICON_RESERVED_WIDTH = sizes.icon.md + spacing.xs;
+
 // iOS reports TextInput contentSize via native font metrics, ignoring styled lineHeight.
 // This buffer compensates for the discrepancy so the last line is never clipped.
 const IOS_LINE_HEIGHT_BUFFER = spacing.xs;
 
+export type EditableTitleVariant = 'titleM' | 'titleXl';
+export type EditableTitleAlign = 'center' | 'left';
+
 export type EditableTitleProps = {
+  align?: EditableTitleAlign;
   maxLength?: number;
-  onChange: (value: string) => void;
+  /** Called when editing finishes (blur/submit). Return false to reject — the field reverts to `value` and exits edit mode. */
+  onSubmit: (value: string) => boolean;
   placeholder?: string;
   value: string;
+  variant?: EditableTitleVariant;
 };
 
+function sanitizeTitle(value: string) {
+  return value.replace(/\n/g, '');
+}
+
 export function EditableTitle({
+  align = 'center',
   maxLength,
-  onChange,
+  onSubmit,
   placeholder = 'Enter plant name',
   value,
+  variant = 'titleM',
 }: EditableTitleProps) {
+  const textStyle = typography[variant];
+  const singleLineHeight = textStyle.lineHeight;
+  const isCentered = align === 'center';
   const [editing, setEditing] = React.useState(false);
   const [draft, setDraft] = React.useState(value);
-  const [inputHeight, setInputHeight] = React.useState<number>(SINGLE_LINE_HEIGHT);
+  const [inputHeight, setInputHeight] = React.useState<number>(singleLineHeight);
+  const [availableWidth, setAvailableWidth] = React.useState<number | null>(null);
   const inputRef = React.useRef<TextInput>(null);
 
   React.useEffect(() => {
@@ -35,17 +53,27 @@ export function EditableTitle({
   const displayAccessibilityLabel = value.trim().length > 0 ? `Edit ${value}` : `Edit ${placeholder}`;
 
   const handleBlur = React.useCallback(() => {
+    const nextName = draft.trim();
     // Empty value is not a valid saved state; keep editing active.
-    if (draft.trim().length === 0) {
+    if (nextName.length === 0) {
       setEditing(true);
       requestAnimationFrame(() => inputRef.current?.focus());
       return;
     }
+    // Rejected (e.g. duplicate name): revert to the last committed value.
+    if (!onSubmit(nextName)) setDraft(value);
     setEditing(false);
+  }, [draft, onSubmit, value]);
+
+  const handleSubmitEditing = React.useCallback(() => {
+    // Multiline TextInputs can insert a newline before submit/keypress finishes.
+    const sanitized = sanitizeTitle(draft);
+    if (sanitized !== draft) setDraft(sanitized);
+    inputRef.current?.blur();
   }, [draft]);
 
   return (
-    <View style={styles.root}>
+    <View style={styles.root} onLayout={e => setAvailableWidth(e.nativeEvent.layout.width)}>
       {editing ? (
         <View style={styles.editWrap}>
           {/*
@@ -54,7 +82,13 @@ export function EditableTitle({
            * so we mirror the input text invisibly and read its onLayout height instead.
            */}
           <Text
-            style={[styles.input, styles.mirror]}
+            style={[
+              styles.input,
+              isCentered ? styles.inputCentered : styles.inputLeft,
+              textStyle,
+              { textAlign: align },
+              styles.mirror,
+            ]}
             onLayout={e => setInputHeight(e.nativeEvent.layout.height + IOS_LINE_HEIGHT_BUFFER)}
           >
             {draft || placeholder}
@@ -67,13 +101,26 @@ export function EditableTitle({
             multiline
             onBlur={handleBlur}
             onChangeText={next => {
-              setDraft(next);
-              onChange(next);
+              const sanitized = sanitizeTitle(next);
+              setDraft(sanitized);
+              if (sanitized !== next) inputRef.current?.blur();
             }}
+            onKeyPress={e => {
+              // iOS never fires onSubmitEditing for multiline inputs — Enter just inserts a
+              // newline, so intercept it here instead (handleSubmitEditing strips the newline).
+              if (e.nativeEvent.key === 'Enter') handleSubmitEditing();
+            }}
+            onSubmitEditing={handleSubmitEditing}
             placeholder={placeholder}
             placeholderTextColor={colors.text.placeholder}
+            returnKeyType="done"
             scrollEnabled={false}
-            style={[styles.input, { height: inputHeight }]}
+            style={[
+              styles.input,
+              isCentered ? styles.inputCentered : styles.inputLeft,
+              textStyle,
+              { height: inputHeight, minHeight: singleLineHeight, textAlign: align },
+            ]}
             textAlignVertical="top"
             value={draft}
           />
@@ -83,8 +130,19 @@ export function EditableTitle({
           accessibilityLabel={displayAccessibilityLabel}
           accessibilityRole="button"
           onPress={() => setEditing(true)}
-          style={styles.displayRow}>
-          <Text style={styles.displayText}>{value.length > 0 ? value : ''}</Text>
+          style={[styles.displayRow, isCentered && styles.displayRowCentered]}>
+          <Text
+            style={[
+              styles.displayText,
+              textStyle,
+              { textAlign: align },
+              availableWidth != null
+                ? { maxWidth: availableWidth - EDIT_ICON_RESERVED_WIDTH }
+                : null,
+            ]}
+          >
+            {value.length > 0 ? value : ''}
+          </Text>
           <Icon color={colors.icon.primary} name="edit" />
         </Pressable>
       )}
@@ -94,46 +152,39 @@ export function EditableTitle({
 
 const styles = StyleSheet.create({
   root: {
-    alignItems: 'center',
-    alignSelf: 'center',
     maxWidth: '100%',
     width: '100%',
   },
   editWrap: {
-    alignSelf: 'center',
     maxWidth: '100%',
     width: '100%',
   },
   displayRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: spacing.sm,
-    justifyContent: 'center',
-    maxWidth: '100%',
+    gap: spacing.xs,
+  },
+  displayRowCentered: {
+    alignSelf: 'center',
   },
   displayText: {
     color: colors.text.primary,
-    flexShrink: 1,
-    fontFamily: typography.titleM.fontFamily,
-    fontSize: typography.titleM.fontSize,
     letterSpacing: 0,
-    lineHeight: EDITABLE_TITLE_LINE_HEIGHT,
-    textAlign: 'center',
   },
   input: {
-    alignSelf: 'center',
     backgroundColor: colors.surface.white,
     color: colors.text.primary,
-    fontFamily: typography.titleM.fontFamily,
-    fontSize: typography.titleM.fontSize,
     letterSpacing: 0,
-    lineHeight: EDITABLE_TITLE_LINE_HEIGHT,
     maxWidth: '100%',
-    minHeight: SINGLE_LINE_HEIGHT,
     paddingHorizontal: spacing.none,
     paddingVertical: spacing.none,
-    textAlign: 'center',
     textAlignVertical: 'top',
+  },
+  inputCentered: {
+    alignSelf: 'center',
+  },
+  inputLeft: {
+    alignSelf: 'flex-start',
   },
   mirror: {
     opacity: 0,

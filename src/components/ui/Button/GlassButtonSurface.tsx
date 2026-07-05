@@ -8,6 +8,7 @@ import { GlassView } from '../GlassView';
 import { GLASS_BUTTON_BORDER_INSET, GLASS_BUTTON_BORDER_WIDTH } from './glassButtonTokens';
 
 const GLASS_BUTTON_BORDER_STOPS = gradients.glassBorder.map(parseRgbaStop);
+const HALF = 2;
 
 type GlassButtonSurfaceProps = {
   children: React.ReactNode;
@@ -58,16 +59,28 @@ export function GlassButtonSurface({
                 />
               </SvgGradient>
             </Defs>
-            <Rect
-              fill="none"
-              height={layout.height - GLASS_BUTTON_BORDER_WIDTH}
-              rx={radius}
-              stroke="url(#glassButtonBorder)"
-              strokeWidth={GLASS_BUTTON_BORDER_WIDTH}
-              width={layout.width - GLASS_BUTTON_BORDER_WIDTH}
-              x={GLASS_BUTTON_BORDER_INSET}
-              y={GLASS_BUTTON_BORDER_INSET}
-            />
+            {(() => {
+              const rectWidth = layout.width - GLASS_BUTTON_BORDER_WIDTH;
+              const rectHeight = layout.height - GLASS_BUTTON_BORDER_WIDTH;
+              // Clamp explicitly instead of relying on the SVG renderer to clamp rx/ry to the
+              // rect's own dimensions — otherwise short/narrow buttons render an under-rounded
+              // border that doesn't match the (correctly pill-shaped) glass fill behind it.
+              const cornerRadius = Math.min(radius, rectWidth / HALF, rectHeight / HALF);
+
+              return (
+                <Rect
+                  fill="none"
+                  height={rectHeight}
+                  rx={cornerRadius}
+                  ry={cornerRadius}
+                  stroke="url(#glassButtonBorder)"
+                  strokeWidth={GLASS_BUTTON_BORDER_WIDTH}
+                  width={rectWidth}
+                  x={GLASS_BUTTON_BORDER_INSET}
+                  y={GLASS_BUTTON_BORDER_INSET}
+                />
+              );
+            })()}
           </Svg>
         </View>
       ) : null}
