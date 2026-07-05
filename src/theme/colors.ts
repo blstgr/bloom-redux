@@ -5,6 +5,7 @@ const palette = {
   mist:   '#B9C7B2',
   orange: '#C2531C',
   peach:  '#FBE5D8',
+  peachDark: '#F3DED3',
   creamWarm: '#FCF2E6',
   cream:  '#EDE9E1',
   white:  '#FFFFFF',
@@ -25,6 +26,7 @@ export const colors = {
   surface: {
     white: palette.white,
     creamWarm: palette.creamWarm,
+    peachDark: palette.peachDark,
     glass: 'rgba(255, 255, 255, 0.5)',
     dark:  palette.dark,
   },

@@ -76,6 +76,10 @@ export function ScreenLayout({
   const contentContainerProps = scrollableContent
     ? {
         contentInsetAdjustmentBehavior: 'never' as const,
+        // Lets a tap on a row under a focused input (e.g. search suggestions/history) register
+        // its own onPress instead of the ScrollView blurring the input first and unmounting the
+        // row out from under the touch.
+        keyboardShouldPersistTaps: 'handled' as const,
         showsVerticalScrollIndicator: false,
       }
     : {};

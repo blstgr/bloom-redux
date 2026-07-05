@@ -13,6 +13,7 @@ import { GlassView } from '../GlassView';
 import { Icon, type IconName, type IconSize } from '../Icon';
 
 export type InputType = 'text' | 'email' | 'password' | 'number';
+export type InputSize = 'default' | 'large';
 
 export type InputAction = {
   accessibilityLabel: string;
@@ -38,6 +39,7 @@ export type InputProps = {
   onChangeText: (value: string) => void;
   onFocus?: () => void;
   placeholder?: string;
+  size?: InputSize;
   type?: InputType;
   value: string;
 };
@@ -55,6 +57,7 @@ export function Input({
   onChangeText,
   onFocus,
   placeholder,
+  size = 'default',
   type = 'text',
   value,
 }: InputProps) {
@@ -63,6 +66,7 @@ export function Input({
   const visibleActions = actions.slice(0, MAX_INPUT_ACTIONS);
   const resolvedAccessibilityLabel = firstNonEmptyText(accessibilityLabel, label, placeholder) ?? 'Input';
   const hasLabelRow = firstNonEmptyText(label) != null || labelIcon != null;
+  const isLarge = size === 'large';
 
   return (
     <View style={styles.container}>
@@ -73,20 +77,21 @@ export function Input({
         </View>
       ) : null}
       <GlassView
-        fallbackColor={colors.surface.creamWarm}
+        fallbackColor={isFocused ? colors.surface.peachDark : colors.surface.creamWarm}
         radius={radii.pill}
-        shadow={isFocused}
+        shadow={false}
         style={styles.inputShadowWrap}
-        tintColor={colors.surface.creamWarm}
+        tintColor={isFocused ? colors.surface.peachDark : colors.surface.creamWarm}
       >
         <View
           style={[
             styles.inputWrapper,
+            isLarge && styles.inputWrapperLarge,
             Boolean(error) && styles.inputWrapperError,
             disabled && styles.inputWrapperDisabled,
           ]}>
           {leadingIcon ? (
-            <View style={styles.leadingIconSlot}>
+            <View style={isLarge ? styles.leadingIconSlotLarge : styles.leadingIconSlot}>
               <Icon
                 color={disabled ? colors.action.disabled : colors.icon.primary}
                 name={leadingIcon}
@@ -115,6 +120,7 @@ export function Input({
             secureTextEntry={type === 'password'}
             style={[
               styles.input,
+              isLarge && styles.inputLarge,
               !leadingIcon && styles.inputLeadingPadding,
               visibleActions.length === 0 && styles.inputTrailingPadding,
               isFocused && styles.inputFocused,
@@ -124,7 +130,7 @@ export function Input({
           />
           {visibleActions.length > 0 ? (
             <View style={styles.actions}>
-              {visibleActions.map(action => (
+              {visibleActions.map((action, index) => (
                 <TouchableOpacity
                   accessibilityLabel={action.accessibilityLabel}
                   accessibilityRole="button"
@@ -132,7 +138,14 @@ export function Input({
                   disabled={disabled || action.disabled}
                   key={action.key}
                   onPress={action.onPress}
-                  style={styles.actionButton}>
+                  style={[
+                    styles.actionButton,
+                    isLarge && styles.actionButtonLarge,
+                    // Only the outermost action (last in the row) sits against the pill's own
+                    // rounded edge — any actions before it are sandwiched between the text field
+                    // and another action button, so they stay square on both sides.
+                    index === visibleActions.length - 1 && styles.actionButtonOuter,
+                  ]}>
                   <Icon
                     color={disabled || action.disabled ? colors.action.disabled : colors.icon.primary}
                     name={action.icon}
@@ -182,8 +195,13 @@ const styles = StyleSheet.create({
   },
   inputWrapper: {
     alignItems: 'center',
+    borderRadius: radii.pill,
     flexDirection: 'row',
     height: sizes.input.height,
+    overflow: 'hidden',
+  },
+  inputWrapperLarge: {
+    height: sizes.input.heightLarge,
   },
   inputWrapperDisabled: {
     opacity: DISABLED_INPUT_OPACITY,
@@ -200,6 +218,9 @@ const styles = StyleSheet.create({
     fontSize: typography.body.fontSize,
     height: sizes.input.height,
     paddingVertical: spacing.none,
+  },
+  inputLarge: {
+    height: sizes.input.heightLarge,
   },
   // Only add horizontal breathing room on an edge that isn't already padded by an
   // adjacent leadingIcon slot or action button.
@@ -221,13 +242,19 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     alignItems: 'center',
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: radii.pill,
-    borderTopLeftRadius: 0,
-    borderTopRightRadius: radii.pill,
     height: sizes.input.height,
     justifyContent: 'center',
     width: sizes.input.height,
+  },
+  actionButtonLarge: {
+    height: sizes.input.heightLarge,
+    width: sizes.input.heightLarge,
+  },
+  // Rounds only the edge that touches the pill's own outer boundary — applied to whichever
+  // action is currently last, regardless of size or how many actions are visible.
+  actionButtonOuter: {
+    borderBottomRightRadius: radii.pill,
+    borderTopRightRadius: radii.pill,
   },
   leadingIconSlot: {
     alignItems: 'center',
@@ -238,5 +265,17 @@ const styles = StyleSheet.create({
     height: sizes.input.height,
     justifyContent: 'center',
     width: sizes.input.height,
+  },
+  // Large variant hugs the icon instead of matching a fixed square slot: width comes from the
+  // icon's own intrinsic size plus this horizontal padding, not from the row height.
+  leadingIconSlotLarge: {
+    alignItems: 'center',
+    borderBottomLeftRadius: radii.pill,
+    borderBottomRightRadius: 0,
+    borderTopLeftRadius: radii.pill,
+    borderTopRightRadius: 0,
+    height: sizes.input.heightLarge,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
   },
 });

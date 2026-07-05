@@ -30,6 +30,7 @@ export const sizes = {
   },
   input: {
     height: 44,
+    heightLarge: 64,
   },
   modal: {
     maxWidth: 284,

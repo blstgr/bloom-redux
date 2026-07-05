@@ -28,6 +28,16 @@ export function GlassView({
   style,
   tintColor = colors.overlay.glass,
 }: GlassViewProps) {
+  // The blur/tint layers are `position: absolute` and contribute nothing to this View's own
+  // content size. A caller with real `children` (Input's row, NavBar's items) already sizes
+  // this View correctly via that normal-flow content, same as before this prop existed — only a
+  // caller with NO children (GlassButtonSurface, WateringSlider's blurLayer), relying purely on
+  // `style` (e.g. StyleSheet.absoluteFill) to size it, needs help: without any real content the
+  // View would collapse to zero height. Gate the fill style on that, rather than applying it
+  // unconditionally — flexGrow on a real-content case can otherwise balloon several auto-sized
+  // ancestors up the tree when a sibling elsewhere happens to be flex:1 (e.g. a screen's
+  // scrollable content area), well past this View's own intended size.
+  const hasContent = children != null;
   const blurAndTint = (
     <>
       {Platform.OS === 'android' ? (
@@ -48,7 +58,12 @@ export function GlassView({
   if (!border) {
     return (
       <View style={[shadow && shadows.soft, { borderRadius: radius }, style]}>
-        <View style={[styles.borderless, { backgroundColor: containerColor, borderRadius: radius }]}>
+        <View
+          style={[
+            styles.borderless,
+            !hasContent && styles.fill,
+            { backgroundColor: containerColor, borderRadius: radius },
+          ]}>
           {blurAndTint}
         </View>
       </View>
@@ -64,7 +79,7 @@ export function GlassView({
       <GradientBorder
         borderRadius={radius}
         colors={[...gradients.glassBorder]}
-        style={{ backgroundColor: containerColor }}
+        style={[!hasContent && styles.fill, { backgroundColor: containerColor }]}
       >
         {blurAndTint}
       </GradientBorder>
@@ -75,6 +90,9 @@ export function GlassView({
 const styles = StyleSheet.create({
   borderless: {
     overflow: 'hidden',
+  },
+  fill: {
+    flexGrow: 1,
   },
   tint: {
     ...StyleSheet.absoluteFill,

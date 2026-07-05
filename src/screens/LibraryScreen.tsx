@@ -1,54 +1,60 @@
-import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import React from 'react';
-import { Keyboard, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Keyboard, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppText } from '../components/ui/AppText';
 import { BottomActions } from '../components/ui/BottomActions';
-import { GlassView } from '../components/ui/GlassView';
 import { Icon } from '../components/ui/Icon';
 import { Input, type InputActions } from '../components/ui/Input';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
-import { TopActions } from '../components/ui/TopActions';
+import type { PlantSpecies } from '../features/plants/data/mockPlants';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
-import {
-  SCREENS,
-  type LibraryScreenProps,
-  type RootNavigation,
-  type SettingsDrawerParamList,
-  type TabParamList,
-} from '../navigation';
+import { SCREENS, type LibraryScreenProps, type RootNavigation, type TabParamList } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
 import { colors, layout, radii, sizes, spacing } from '../theme';
 
 const MAX_RESULTS = 8;
 const LIBRARY_PANEL_WIDTH = 327;
 const LIBRARY_SUBTITLE_LINE_HEIGHT = 20.4;
-// ScreenLayout's bottomActions floats over non-scrollable content rather than reserving flow
-// space for it — mirrors the reservation ScreenLayout itself applies for scrollable content,
-// since this screen's content isn't scrollable but still needs to stop above the floating bar.
-const FLOATING_BOTTOM_ACTIONS_STACKED_GAP = spacing.xxl;
+// Matches searchWrap's own marginTop below, so the floating search bar sits the same
+// distance under the safe area as it did before it floated.
+const SEARCH_BAR_TOP_GAP = spacing.xl;
+const SEARCH_RESULTS_TOP_GAP = spacing.md;
 
 export function LibraryScreen({ navigation }: LibraryScreenProps) {
+  const insets = useSafeAreaInsets();
   const rootNavigation = navigation.getParent()?.getParent<RootNavigation>();
-  const { pendingLibrarySearch, setPendingLibrarySearch, species } = usePlantData();
-  const safeAreaInsets = useSafeAreaInsets();
+  const {
+    addSearchHistoryEntry,
+    pendingLibrarySearch,
+    searchHistory,
+    setPendingLibrarySearch,
+    species,
+  } = usePlantData();
   const [query, setQuery] = React.useState('');
+  const [isFocused, setIsFocused] = React.useState(false);
   const normalizedQuery = query.trim().toLowerCase();
-  const [containerHeight, setContainerHeight] = React.useState<number | null>(null);
-  const [headerHeight, setHeaderHeight] = React.useState<number | null>(null);
-  const floatingBottomActionsReservedHeight =
-    safeAreaInsets.bottom + sizes.nav.item + FLOATING_BOTTOM_ACTIONS_STACKED_GAP;
-  const resultsMaxHeight =
-    containerHeight != null && headerHeight != null
-      ? containerHeight - headerHeight - spacing.xs - floatingBottomActionsReservedHeight
-      : undefined;
+  const isSearching = normalizedQuery.length > 0;
+  const showHistory = !isSearching && isFocused && searchHistory.length > 0;
+  const showList = isSearching || showHistory;
 
   React.useEffect(() => {
     if (pendingLibrarySearch == null) return;
     setQuery(pendingLibrarySearch);
     setPendingLibrarySearch(null);
   }, [pendingLibrarySearch, setPendingLibrarySearch]);
+  // Reset once this tab regains focus (e.g. closing the species wiki page), rather than the
+  // moment a result is selected — clearing it immediately flashed the idle icon/title/subtitle
+  // behind the new screen while it was still transitioning in.
+  React.useEffect(
+    () =>
+      navigation.addListener?.('focus', () => {
+        if (pendingLibrarySearch == null) {
+          setQuery('');
+        }
+      }),
+    [navigation, pendingLibrarySearch],
+  );
   const results = React.useMemo(
     () =>
       normalizedQuery.length === 0
@@ -59,9 +65,6 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
     [normalizedQuery, species],
   );
 
-  const openSettings = React.useCallback(() => {
-    navigation.getParent<DrawerNavigationProp<SettingsDrawerParamList>>()?.openDrawer();
-  }, [navigation]);
   const handleNavigateTab = React.useCallback(
     (screen: keyof TabParamList) => {
       navigation.navigate(screen);
@@ -77,6 +80,13 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
       params: { mode: 'search' },
     });
   }, [rootNavigation]);
+  const handleOpenSpecies = React.useCallback(
+    (selected: PlantSpecies) => {
+      addSearchHistoryEntry(selected);
+      rootNavigation?.navigate(SCREENS.SPECIES_INFO, { speciesId: selected.speciesId });
+    },
+    [addSearchHistoryEntry, rootNavigation],
+  );
   const inputActions = React.useMemo<InputActions>(
     () => [
       query.length > 0
@@ -101,14 +111,27 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
   return (
     <ScreenLayout
       topActions={(
-        <TopActions
-          onRightPress={openSettings}
-          rightIcon="more"
-          rightLabel="Open settings"
-        />
+        <View style={styles.searchWrap}>
+          <Input
+            accessibilityLabel="Search plant wiki"
+            actions={inputActions}
+            leadingIcon="search"
+            onBlur={() => setIsFocused(false)}
+            onChangeText={setQuery}
+            onFocus={() => setIsFocused(true)}
+            size="large"
+            value={query}
+          />
+        </View>
       )}
-      contentLayout="start"
-      contentStyle={styles.content}
+      contentStyle={[
+        styles.content,
+        { paddingTop: insets.top + SEARCH_BAR_TOP_GAP + sizes.input.heightLarge + SEARCH_RESULTS_TOP_GAP },
+      ]}
+      scrollableContent
+      topActionsOverlay
+      bottomActionsOverlay={false}
+      stackedGap={spacing.md}
       bottomActions={(
         <BottomActions
           bottomBar={(
@@ -122,62 +145,58 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
       )}>
       <Pressable
         accessible={false}
-        onLayout={e => setContainerHeight(e.nativeEvent.layout.height)}
         onPress={Keyboard.dismiss}
-        style={styles.dismissArea}>
+        style={[styles.dismissArea, !showList && styles.dismissAreaCentered]}>
         <View style={styles.libraryPanel}>
-          <View
-            onLayout={e => setHeaderHeight(e.nativeEvent.layout.height)}
-            style={styles.header}>
-            <Icon color={colors.icon.green} name="sun" size="xxl" />
-            <AppText align="center" variant="titleXl">
-              Potential Victims
-            </AppText>
-            <AppText align="center" style={styles.subtitle}>
-              Search any plant to see if it is ready for you... and if you are ready for it.
-            </AppText>
-            <View style={styles.searchArea}>
-              <Input
-                accessibilityLabel="Search plant wiki"
-                actions={inputActions}
-                leadingIcon="search"
-                onChangeText={setQuery}
-                value={query}
-              />
-            </View>
-          </View>
-          {results.length > 0 ? (
-            <GlassView
-              fallbackColor={colors.surface.creamWarm}
-              radius={radii.lg}
-              style={styles.results}
-            >
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                style={resultsMaxHeight != null ? { maxHeight: resultsMaxHeight } : undefined}>
-                <View accessibilityLabel="Plant wiki search results">
-                  {results.map(result => (
-                    <Pressable
-                      accessibilityLabel={`Open ${result.speciesName}`}
-                      accessibilityRole="button"
-                      key={result.speciesId}
-                      onPress={() => {
-                        rootNavigation?.navigate(SCREENS.SPECIES_INFO, {
-                          speciesId: result.speciesId,
-                        });
-                      }}
-                      style={styles.resultRow}>
-                      <Icon color={colors.icon.primary} name="search" size="sm" />
-                      <AppText>{result.speciesName}</AppText>
-                    </Pressable>
-                  ))}
-                </View>
-              </ScrollView>
-            </GlassView>
-          ) : null}
+          {isSearching ? (
+            results.length > 0 ? (
+              <SearchResultSection heading="Suggestions" items={results} onSelect={handleOpenSpecies} />
+            ) : null
+          ) : showHistory ? (
+            <SearchResultSection heading="History" items={searchHistory} onSelect={handleOpenSpecies} />
+          ) : isFocused ? null : (
+            <>
+              <Icon color={colors.icon.green} name="sun" size="xxl" />
+              <AppText align="center" variant="titleXl">
+                Potential Victims
+              </AppText>
+              <AppText align="center" style={styles.subtitle}>
+                Search any plant to see if it is ready for you... and if you are ready for it.
+              </AppText>
+            </>
+          )}
         </View>
       </Pressable>
     </ScreenLayout>
+  );
+}
+
+function SearchResultSection({
+  heading,
+  items,
+  onSelect,
+}: {
+  heading: string;
+  items: PlantSpecies[];
+  onSelect: (species: PlantSpecies) => void;
+}) {
+  return (
+    <View accessibilityLabel={`Plant wiki ${heading.toLowerCase()}`} style={styles.results}>
+      <View style={styles.resultsHeadingRow}>
+        <AppText variant="titleS">{heading}</AppText>
+      </View>
+      {items.map(item => (
+        <Pressable
+          accessibilityLabel={`Open ${item.speciesName}`}
+          accessibilityRole="button"
+          key={item.speciesId}
+          onPress={() => onSelect(item)}
+          style={styles.resultRow}>
+          <Icon color={colors.icon.primary} name="search" size="sm" />
+          <AppText>{item.speciesName}</AppText>
+        </Pressable>
+      ))}
+    </View>
   );
 }
 
@@ -191,13 +210,12 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
   },
-  header: {
-    alignItems: 'center',
-    gap: spacing.md,
-    width: '100%',
+  dismissAreaCentered: {
+    justifyContent: 'center',
   },
   libraryPanel: {
     alignItems: 'center',
+    gap: spacing.md,
     width: LIBRARY_PANEL_WIDTH,
   },
   resultRow: {
@@ -209,12 +227,18 @@ const styles = StyleSheet.create({
   },
   results: {
     borderRadius: radii.lg,
-    marginTop: spacing.xs,
     width: '100%',
   },
-  searchArea: {
-    marginTop: spacing.md,
+  resultsHeadingRow: {
+    height: sizes.input.height,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
     width: '100%',
+  },
+  searchWrap: {
+    alignSelf: 'center',
+    marginTop: spacing.xl,
+    width: LIBRARY_PANEL_WIDTH,
   },
   subtitle: {
     lineHeight: LIBRARY_SUBTITLE_LINE_HEIGHT,

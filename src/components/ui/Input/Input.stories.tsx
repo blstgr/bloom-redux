@@ -62,6 +62,28 @@ export const D_Disabled: Story = {
   },
 };
 
+export const E_Large: Story = {
+  name: 'Large',
+  args: {
+    accessibilityLabel: 'Search plants',
+    actions: [
+      {
+        accessibilityLabel: 'Open camera',
+        icon: 'camera',
+        key: 'open-camera',
+        onPress: () => {},
+      },
+    ],
+    label: undefined,
+    leadingIcon: 'search',
+    onChangeText: () => {},
+    placeholder: undefined,
+    size: 'large',
+    type: 'text',
+    value: 'ZZ',
+  },
+};
+
 function InteractiveInput() {
   const [value, setValue] = React.useState('plantkiller@gmail.com');
 

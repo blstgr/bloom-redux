@@ -20,6 +20,7 @@ type PlantNameSaveResult =
     };
 
 export type PlantDataContextValue = {
+  addSearchHistoryEntry: (species: PlantSpecies) => void;
   createDetection: (image: PlantDetection['image']) => PlantDetection;
   deleteOwnedPlant: (ownedPlantId: string) => void;
   detections: PlantDetection[];
@@ -32,6 +33,8 @@ export type PlantDataContextValue = {
   pendingLibrarySearch: string | null;
   renameOwnedPlant: (ownedPlantId: string, customName: string) => PlantNameSaveResult;
   saveDetection: (detectionId: string, customName: string) => PlantNameSaveResult;
+  /** Most-recently-opened species from Library search, newest first. */
+  searchHistory: PlantSpecies[];
   setPendingLibrarySearch: (speciesName: string | null) => void;
   species: PlantSpecies[];
   unmarkWatered: (ownedPlantId: string) => void;
@@ -40,6 +43,7 @@ export type PlantDataContextValue = {
 const INITIAL_DETECTION_INDEX = 1;
 const INITIAL_OWNED_PLANT_INDEX = 1;
 const FIRST_DUPLICATE_SUFFIX = 2;
+const MAX_SEARCH_HISTORY = 3;
 const PlantDataContext = React.createContext<PlantDataContextValue | null>(null);
 
 type PlantDataProviderProps = {
@@ -90,6 +94,7 @@ export function PlantDataProvider({
   const [ownedPlants, setOwnedPlants] = React.useState<OwnedPlant[]>(initialOwnedPlants);
   const [detections, setDetections] = React.useState<PlantDetection[]>([]);
   const [pendingLibrarySearch, setPendingLibrarySearch] = React.useState<string | null>(null);
+  const [searchHistory, setSearchHistory] = React.useState<PlantSpecies[]>([]);
   const ownedPlantsRef = React.useRef<OwnedPlant[]>(initialOwnedPlants);
   const detectionIndexRef = React.useRef(INITIAL_DETECTION_INDEX);
   const ownedPlantIndexRef = React.useRef(getNextOwnedPlantIndex(initialOwnedPlants));
@@ -198,6 +203,13 @@ export function PlantDataProvider({
     });
   }, []);
 
+  const addSearchHistoryEntry = React.useCallback((species: PlantSpecies) => {
+    setSearchHistory(current => [
+      species,
+      ...current.filter(item => item.speciesId !== species.speciesId),
+    ].slice(0, MAX_SEARCH_HISTORY));
+  }, []);
+
   const renameOwnedPlant = React.useCallback(
     (ownedPlantId: string, customName: string): PlantNameSaveResult => {
       const nextName = customName.trim();
@@ -225,6 +237,7 @@ export function PlantDataProvider({
 
   const value = React.useMemo<PlantDataContextValue>(
     () => ({
+      addSearchHistoryEntry,
       createDetection,
       deleteOwnedPlant,
       detections,
@@ -236,11 +249,13 @@ export function PlantDataProvider({
       pendingLibrarySearch,
       renameOwnedPlant,
       saveDetection,
+      searchHistory,
       setPendingLibrarySearch,
       species: mockSpecies,
       unmarkWatered,
     }),
     [
+      addSearchHistoryEntry,
       createDetection,
       deleteOwnedPlant,
       detections,
@@ -251,6 +266,7 @@ export function PlantDataProvider({
       pendingLibrarySearch,
       renameOwnedPlant,
       saveDetection,
+      searchHistory,
       unmarkWatered,
     ],
   );
