@@ -6,57 +6,108 @@ import { BottomActions } from '../components/ui/BottomActions';
 import { Loader } from '../components/ui/Loader';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { TopActions } from '../components/ui/TopActions';
-import { usePlantData } from '../features/plants/data/PlantDataProvider';
+import {
+  usePlantData,
+  type SpeciesLookupFailureReason,
+} from '../features/plants/data/PlantDataProvider';
 import { SCREENS, type AddPlantLoaderScreenProps } from '../navigation';
 import { sizes } from '../theme';
 
-const RECOGNITION_DELAY_MS = 600;
+const IDENTIFICATION_FAILURE_TEXT =
+  "Oops... we can't quite tell what plant that is. Try another photo with better lighting!";
+const CARE_INFO_UNAVAILABLE_TEXT =
+  "We identified this plant, but don't have care info for it yet. Try another plant.";
+const RATE_LIMITED_TEXT = "We're getting a lot of requests right now. Please try again in a moment.";
+const RETAKE_ACTION_LABEL = 'Retake';
+
+const FAILURE_TEXT_BY_REASON: Record<SpeciesLookupFailureReason, string> = {
+  'low-confidence': IDENTIFICATION_FAILURE_TEXT,
+  'network-error': IDENTIFICATION_FAILURE_TEXT,
+  'no-candidates': IDENTIFICATION_FAILURE_TEXT,
+  'no-perenual-match': CARE_INFO_UNAVAILABLE_TEXT,
+  'rate-limited': RATE_LIMITED_TEXT,
+};
 
 export function AddPlantLoaderScreen({
   navigation,
   route,
 }: AddPlantLoaderScreenProps) {
-  const { addSearchHistoryEntry, getDetectionById, getSpeciesById, setPendingLibrarySearch } = usePlantData();
+  const {
+    addSearchHistoryEntry,
+    getDetectionById,
+    identifyAndResolveSpecies,
+    resolveDetectionSpecies,
+    setPendingLibrarySearch,
+  } = usePlantData();
   const captureId = route.params?.captureId;
   const mode = route.params?.mode;
   const detection = getDetectionById(captureId);
-  const species = getSpeciesById(detection?.speciesId);
   const previewImage = detection?.image;
+  const [failureText, setFailureText] = React.useState<string | null>(null);
+  const resolvingDetectionIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (!detection || !species) return undefined;
+    if (!detection || detection.speciesId || resolvingDetectionIdRef.current === detection.detectionId) {
+      return undefined;
+    }
 
-    const timeout = setTimeout(() => {
+    resolvingDetectionIdRef.current = detection.detectionId;
+    let cancelled = false;
+
+    identifyAndResolveSpecies(detection.image).then(result => {
+      // The user may have already navigated away (e.g. closed recognition) while this was in
+      // flight — don't act on a stale result against a screen that's no longer active.
+      if (cancelled) return;
+
+      if (!result.success) {
+        setFailureText(FAILURE_TEXT_BY_REASON[result.reason]);
+        return;
+      }
+
+      resolveDetectionSpecies(detection.detectionId, result.species);
+
       if (mode === 'search') {
         // Prefills the Library search box for whenever the user closes the article and lands
         // back on it — no need to auto-focus, so no timing race with the screen transition.
-        setPendingLibrarySearch(species.speciesName);
+        setPendingLibrarySearch(result.species.speciesName);
         // This flow never passes through the Library's own result rows (handleOpenSpecies),
         // so the detected species has to be recorded here instead, or it would never show
         // up in search history.
-        addSearchHistoryEntry(species);
+        addSearchHistoryEntry(result.species);
         // Replaces the camera stack in place (rather than pushing on top of it), so closing
         // the article naturally returns to the screen the camera flow was launched from.
         // The action bubbles up to the root stack since SPECIES_INFO isn't a screen in this
         // (AddPlantStack) navigator, replacing the AddPlantStack route itself there.
-        navigation.replace(SCREENS.SPECIES_INFO, {
-          speciesId: species.speciesId,
-        });
+        navigation.replace(SCREENS.SPECIES_INFO, { speciesId: result.species.speciesId });
         return;
       }
 
-      navigation.navigate(SCREENS.ADD_PLANT_PREFILLED, {
-        detectionId: captureId,
-      });
-    }, RECOGNITION_DELAY_MS);
+      navigation.navigate(SCREENS.ADD_PLANT_PREFILLED, { detectionId: captureId });
+    });
 
-    return () => clearTimeout(timeout);
-  }, [addSearchHistoryEntry, captureId, detection, mode, navigation, setPendingLibrarySearch, species]);
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    addSearchHistoryEntry,
+    captureId,
+    detection,
+    identifyAndResolveSpecies,
+    mode,
+    navigation,
+    resolveDetectionSpecies,
+    setPendingLibrarySearch,
+  ]);
 
-  if (!detection || !species || !previewImage) {
+  const handleRetake = React.useCallback(() => {
+    navigation.replace(SCREENS.ADD_PLANT_CAMERA, { mode });
+  }, [mode, navigation]);
+
+  if (!detection || !previewImage) {
     return (
       <AlertModal
-        onClose={() => navigation.replace(SCREENS.ADD_PLANT_CAMERA)}
+        actionLabel={RETAKE_ACTION_LABEL}
+        onClose={handleRetake}
         text="Plant recognition could not start because no captured plant photo was found."
         variant="error"
         visible
@@ -81,6 +132,15 @@ export function AddPlantLoaderScreen({
           <Loader />
         </View>
       </View>
+      {failureText ? (
+        <AlertModal
+          actionLabel={RETAKE_ACTION_LABEL}
+          onClose={handleRetake}
+          text={failureText}
+          variant="info"
+          visible
+        />
+      ) : null}
     </ScreenLayout>
   );
 }

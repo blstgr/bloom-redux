@@ -17,13 +17,27 @@ import { AddPlantCameraScreen } from '../src/screens/AddPlantCameraScreen';
 import { LibraryScreen } from '../src/screens/LibraryScreen';
 import { PlantDetailScreen } from '../src/screens/PlantDetailScreen';
 import { SpeciesInfoScreen } from '../src/screens/SpeciesInfoScreen';
+import { getSpeciesDetails, searchSpecies } from '../src/services/plantApi';
+import { generateSpeciesCopy } from '../src/services/plantCopyApi';
+import { searchPhoto } from '../src/services/unsplashApi';
 
 jest.mock('react-native-image-picker');
+jest.mock('../src/services/plantApi');
+jest.mock('../src/services/plantCopyApi');
+jest.mock('../src/services/unsplashApi');
 
 const mockedLaunchCamera = jest.mocked(launchCamera);
-
+const mockedSearchSpecies = jest.mocked(searchSpecies);
+const mockedGetSpeciesDetails = jest.mocked(getSpeciesDetails);
+const mockedGenerateSpeciesCopy = jest.mocked(generateSpeciesCopy);
+const mockedSearchPhoto = jest.mocked(searchPhoto);
 beforeEach(() => {
   jest.clearAllMocks();
+  // LibraryScreen's search-as-you-type debounce can still fire after a test body returns (real
+  // timers, not fake ones) — give it a safe default so a stray fire never calls .then() on
+  // undefined from an unconfigured automock.
+  mockedSearchSpecies.mockResolvedValue([]);
+  mockedSearchPhoto.mockResolvedValue(null);
 });
 
 const TEST_OWNED_PLANT: OwnedPlant = {
@@ -229,21 +243,56 @@ test('navigates from library search result to species info with species id', asy
   const rootNavigate = jest.fn();
   let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
+  mockedSearchSpecies.mockResolvedValueOnce([
+    {
+      common_name: 'Zebra Haworthia',
+      default_image: null,
+      id: 501,
+      scientific_name: ['Haworthiopsis attenuata'],
+    },
+  ]);
+  mockedGetSpeciesDetails.mockResolvedValueOnce({
+    care_level: 'Easy',
+    common_name: 'Zebra Haworthia',
+    default_image: null,
+    dimensions: null,
+    growth_rate: 'Low',
+    id: 501,
+    poisonous_to_humans: false,
+    poisonous_to_pets: false,
+    scientific_name: ['Haworthiopsis attenuata'],
+    sunlight: null,
+    watering_general_benchmark: { unit: 'days', value: '14' },
+  });
+  mockedGenerateSpeciesCopy.mockResolvedValueOnce({
+    category: 'Desert minimalist',
+    description: 'Only needs water when fully dry.',
+    wikiArticle: 'A longer article.',
+  });
+
   await ReactTestRenderer.act(() => {
     renderer = ReactTestRenderer.create(
       renderWithProviders(<LibraryScreen {...createLibraryProps(rootNavigate)} />),
     );
   });
 
-  await ReactTestRenderer.act(() => {
-    renderer?.root.findByProps({ accessibilityLabel: 'Search plant wiki' }).props.onChangeText('Z');
+  await ReactTestRenderer.act(async () => {
+    renderer?.root.findByProps({ accessibilityLabel: 'Search plant wiki' }).props.onChangeText('Zebra Haworthia');
+    // Flushes LibraryScreen's immediate mocked search promise chain.
+    await new Promise(resolve => setTimeout(resolve, 0));
   });
+
   await ReactTestRenderer.act(() => {
     renderer?.root.findByProps({ accessibilityLabel: 'Open Zebra Haworthia' }).props.onPress();
   });
 
+  // Flushes the tap handler's own getSpeciesDetails -> generateSpeciesCopy promise chain.
+  await ReactTestRenderer.act(async () => {
+    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+
   expect(rootNavigate).toHaveBeenCalledWith(SCREENS.SPECIES_INFO, {
-    speciesId: 'zebra-haworthia',
+    speciesId: '501',
   });
 });
 
@@ -264,6 +313,13 @@ test('library search replaces camera action with clear action while typing', asy
 
   expect(renderer?.root.findAllByProps({ accessibilityLabel: 'Search plant by photo' })).toHaveLength(0);
   expect(renderer?.root.findByProps({ accessibilityLabel: 'Clear plant search' })).toBeTruthy();
+
+  // Unmount before the test ends so the pending search-debounce timeout this typing started
+  // (never awaited above, since this test only checks synchronous UI state) is cancelled by the
+  // effect cleanup, rather than firing later against a torn-down Jest environment.
+  ReactTestRenderer.act(() => {
+    renderer?.unmount();
+  });
 });
 
 test('library camera search launches the camera flow', async () => {

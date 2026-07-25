@@ -8,14 +8,17 @@ import { Icon } from '../Icon';
 
 export type AlertModalVariant = 'info' | 'error';
 
+const DEFAULT_ACTION_LABEL = 'Close';
+
 export type AlertModalProps = {
+  actionLabel?: string;
   onClose?: () => void;
   text: string;
   variant: AlertModalVariant;
   visible: boolean;
 };
 
-export function AlertModal({ onClose, text, variant, visible }: AlertModalProps) {
+export function AlertModal({ actionLabel = DEFAULT_ACTION_LABEL, onClose, text, variant, visible }: AlertModalProps) {
   const handleClose = React.useCallback(() => {
     onClose?.();
   }, [onClose]);
@@ -34,7 +37,7 @@ export function AlertModal({ onClose, text, variant, visible }: AlertModalProps)
             {text}
           </AppText>
           <Button
-            label="Close"
+            label={actionLabel}
             layout="fill"
             onPress={handleClose}
             size="small"

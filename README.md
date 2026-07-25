@@ -1,169 +1,133 @@
-# Bloom — Navigation
+# Bloom API Integration
 
-Bloom is a React Native plant-care app. This assignment implements the navigation structure from the Figma design using Stack, Tab, and Drawer navigation, with typed route parameters, custom navigation UI, error handling, and iOS/Android verification.
+Bloom is a React Native plant-care app. This implementation connects the app to real plant-related REST APIs, stores API results in screen/provider state, renders searchable species results in a `FlatList`, handles API errors and longer loading flows, and opens a details screen from each selected result.
+
+## API Selection
+
+The app uses public REST APIs that match the plant-care theme:
+
+| API | Purpose | Local wrapper |
+| --- | --- | --- |
+| Perenual | Search indoor species and fetch species care details | `src/services/plantApi.ts` |
+| Pl@ntNet | Identify a plant from a captured image | `src/services/plantIdApi.ts` |
+| Unsplash | Find a usable species photo when Perenual has no real image | `src/services/unsplashApi.ts` |
+| DeepSeek | Generate short and long care copy from resolved plant facts | `src/services/plantCopyApi.ts` |
+
+The primary list/search requirement is implemented with Perenual:
+
+- `searchSpecies(name)` sends `GET /species-list?q=<name>&indoor=1`.
+- `getSpeciesDetails(id)` sends `GET /species/details/{id}`.
+
+API base URLs are centralized in `src/services/constants.ts`.
 
 ## Demo
 
-Navigation demo:
+**Add plant** — capture a photo, Pl@ntNet identifies the species, Perenual care facts resolve, and the plant is saved to the gallery.
 
-![Bloom navigation demo](docs/screenshots/nav-demo.gif)
+![Add plant demo](<docs/screenshots/bloom - api - add plant.gif>)
 
-## Navigation Structure Design
+**Detect plant** — identify a plant by photo from the Library tab and view its full species article, without adding it as an owned plant.
 
-The app uses three navigation types:
+![Detect plant demo](<docs/screenshots/bloom - api - identify plant.gif>)
 
-| Navigation type | Where it is used | Purpose |
-| --- | --- | --- |
-| `Stack.Navigator` | `RootNavigator`, `AddPlantStackNavigator` | Linear flows and detail screens: auth, add-plant flow, plant detail, species info |
-| `Tab.Navigator` | `TabNavigator` | Fast access between main app sections: Home, Library, Water |
-| `Drawer.Navigator` | `SettingsDrawerNavigator` | Additional app functions/settings opened from the top-right more button or drawer gesture |
+**Error handling** — the plant is identified by Pl@ntNet, but Perenual has no matching care-info entry for it; the app shows a graceful fallback instead of fabricating watering/toxicity facts.
 
-Main screen connections:
+![Error handling demo](<docs/screenshots/bloom - api - error.gif>)
 
-| From | Action | To |
-| --- | --- | --- |
-| `AuthStart` | Continue / create account | `SettingsDrawer -> MainTabs -> Home` |
-| `Home` | Bottom add button | `AddPlantStack -> AddPlantCamera` |
-| `Home` | Plant card | `PlantDetail` |
-| `Home`, `Library`, `Water` | Bottom tabs | Switch between `Home`, `Library`, `Water` |
-| `Home`, `Library`, `Water` | More button | Open settings drawer |
-| `Library` | Search result | `SpeciesInfo` |
-| `Library` | Camera search | `AddPlantStack -> AddPlantCamera` in search mode |
-| `Water` | Watering card | `PlantDetail` |
-| `AddPlantCamera` | Capture photo | `AddPlantLoader` |
-| `AddPlantLoader` | Recognition completed | `AddPlantPrefilled` or `SpeciesInfo` |
-| `AddPlantPrefilled` | Save plant | `PlantDetail` |
+## API Integration
 
-Route parameters:
+Network logic is modularized under `src/services/` instead of being embedded directly in screens.
 
-| Route | Params | Why |
-| --- | --- | --- |
-| `AddPlantCamera` | `{ mode?: 'add' \| 'search' }` | Opens camera either for saving an owned plant or searching the plant wiki |
-| `AddPlantLoader` | `{ captureId?: string; mode?: 'add' \| 'search' }` | Loads the captured plant detection |
-| `AddPlantPrefilled` | `{ detectionId?: string }` | Displays recognized plant data before saving |
-| `PlantDetail` | `{ ownedPlantId?: string }` | Shows dynamic content for a saved plant |
-| `SpeciesInfo` | `{ speciesId?: string }` | Shows dynamic content for a plant wiki/species result |
+Example from `src/services/plantApi.ts`:
 
-All route names are centralized in `SCREENS` (`src/navigation/constants.ts`), and all route params are typed in `src/navigation/types.ts`.
-
-## Navigation Implementation
-
-Navigation is split into separate files:
-
-```text
-src/navigation/
-├── AddPlantStackNavigator.tsx
-├── MainTabBar.tsx
-├── RootNavigator.tsx
-├── SettingsDrawerNavigator.tsx
-├── TabNavigator.tsx
-├── constants.ts
-├── index.ts
-└── types.ts
+```ts
+export async function searchSpecies(name: string): Promise<PerenualSpeciesListItem[]> {
+  const query = encodeURIComponent(name);
+  const payload = await fetchPerenual<PerenualSpeciesListResponse>(`/species-list?q=${query}&indoor=1`);
+  return payload.data;
+}
 ```
 
-Implemented containers:
+The app uses `fetch` for API calls. API keys are read from `@env` through `src/services/config.ts`; real values belong in local `.env`, which is gitignored. Use `.env.example` as the template:
 
-- `RootNavigator.tsx`: wraps the app in `NavigationContainer` and defines the root native stack.
-- `TabNavigator.tsx`: defines Home, Library, and Water tabs. The default tab bar is hidden and replaced with the custom `MainTabBar`.
-- `AddPlantStackNavigator.tsx`: defines the camera -> loader -> prefilled save flow.
-- `SettingsDrawerNavigator.tsx`: wraps the main tabs in a right-side drawer and renders `SettingsPanel` as custom drawer content.
+```env
+PERENUAL_API_KEY=
+PLANTNET_API_KEY=
+DEEPSEEK_API_KEY=
+UNSPLASH_ACCESS_KEY=
+```
 
-Custom components integrated into screens:
+State is handled with React state:
 
-- `TopActions` for close, back, trash, and more buttons.
-- `MainTabBar` / `NavBar` for the glass bottom navigation.
-- `PlantCard` for plant navigation from Home.
-- `WateringCard` for navigation from Water.
-- `Input` for Library search and camera search.
-- `AlertModal` for missing/invalid route params.
+- `LibraryScreen.tsx` stores the typed query, search results, and search errors with `useState`.
+- `PlantDataProvider.tsx` stores resolved species, detections, owned plants, and search history.
 
-Native headers are intentionally disabled with `headerShown: false`; the app uses custom glassmorphic headers and buttons from the design system instead of default OS headers.
+Comments in the service and screen files document why requests are filtered, debounced, ranked, and cached.
 
-## Passing Data Between Screens
+## Displaying Data In A List
 
-The app passes IDs through `navigation.navigate()` / `navigation.replace()` and reads them with `route.params`.
+The plant wiki search lives in `src/screens/LibraryScreen.tsx`.
 
-Examples from the implementation:
+Search results from Perenual are rendered with `FlatList` inside `SearchResultSection`:
 
 ```tsx
-rootNavigation?.navigate(SCREENS.PLANT_DETAIL, {
-  ownedPlantId: plant.ownedPlantId,
-});
+<FlatList
+  data={items}
+  keyExtractor={keyExtractor}
+  renderItem={({ item }) => (
+    <Pressable onPress={() => onSelect(item)} style={styles.resultRow}>
+      <Icon color={colors.icon.primary} name="search" size="sm" />
+      <AppText>{labelExtractor(item)}</AppText>
+    </Pressable>
+  )}
+  scrollEnabled={false}
+/>
 ```
 
-```tsx
-const ownedPlant = getOwnedPlantById(route.params?.ownedPlantId);
-```
+The row uses existing app UI components (`Icon`, `AppText`) and the existing design-system styling. Each item has a stable key based on the API species id.
+
+## Loading And Error Handling
+
+`LibraryScreen.tsx` keeps the search suggestion area focused on results:
+
+- Suggestions: matching species are rendered in the `FlatList` as soon as `searchSpecies()` returns.
+- Error: network or API failures show a readable message: `Couldn't load search results. Check your connection and try again.`
+
+Longer API flows use explicit loading UI:
+
+- `PlantDataProvider.tsx` converts Perenual and Pl@ntNet rate limits into explicit `rate-limited` results.
+- `AddPlantLoaderScreen.tsx` shows retry/retake messaging for failed photo identification.
+- `SpeciesInfoScreen.tsx` shows a loader while details resolve and an error modal when details cannot be opened.
+
+## Navigation Integration
+
+The API-backed list is integrated into the existing Library tab.
+
+When the user taps a Perenual result, `LibraryScreen.tsx` navigates to the details screen and passes the species id:
 
 ```tsx
 rootNavigation?.navigate(SCREENS.SPECIES_INFO, {
-  speciesId: item.speciesId,
+  speciesId: String(item.id),
 });
 ```
 
-```tsx
-const species = getSpeciesById(route.params?.speciesId);
-```
+`SpeciesInfoScreen.tsx` reads `route.params.speciesId`, resolves the full species details through `resolveSpeciesById`, and renders the article/details once the data is available.
 
-Missing params are handled safely:
+The camera search flow also connects to navigation:
 
-- Missing `ownedPlantId` in `PlantDetailScreen` shows an error modal.
-- Missing `speciesId` in `SpeciesInfoScreen` shows an error modal.
-- Missing `captureId` in `AddPlantLoaderScreen` shows an error modal.
-- Missing `detectionId` in `AddPlantPrefilledScreen` shows an error modal.
-
-If there is no back route, the error modal returns the user to `Home`.
-
-## Navigation Element Styling
-
-Navigation styling is matched to the Figma design:
-
-- Native headers are hidden globally.
-- `TopActions` provides custom circular glass buttons for back/close/more/trash actions.
-- `MainTabBar` uses custom icons, active state, and a watering badge.
-- The center add button is an action, not a selected tab, so it stays visually inactive.
-- Drawer content uses the existing `SettingsPanel`, not the default drawer menu list.
-- Theme values are centralized in `src/theme` for colors, spacing, typography, radii, and sizes.
-
-The drawer needs a small implementation note in code because the design shows settings as a custom panel, while the assignment requires Drawer navigation. This is documented in `SettingsDrawerNavigator.tsx`.
-
-## Adaptivity And Testing
-
-Verification completed:
-
-- iOS app was run and visually checked.
-- Android app was run and visually checked.
-- Drawer gesture works through `GestureHandlerRootView`.
-- Navigation params and missing-param error paths are covered by tests.
-
-Automated checks:
-
-```sh
-npm run lint
-npx tsc --noEmit
-npm test -- --runInBand
-```
-
-Current test coverage includes:
-
-- `PlantDetail` renders with a valid `ownedPlantId`.
-- Missing `ownedPlantId` shows an error and can return to Home.
-- `Library` search result navigates to `SpeciesInfo` with `speciesId`.
-- Missing `speciesId` shows an error and can return to Home.
-- Camera capture navigates to `AddPlantLoader` with `captureId`.
-- Main tab active state and add-action inactive state are tested.
-- Cross-platform component rendering is checked for iOS and Android.
+- `AddPlantCameraScreen` captures or simulates a plant image.
+- `AddPlantLoaderScreen` identifies and resolves the plant through the service layer.
+- Add mode navigates to `AddPlantPrefilled`.
+- Search mode navigates directly to `SpeciesInfo`.
 
 ## Additional Requirements
 
 | Requirement | Implementation |
 | --- | --- |
-| Modularity | Navigators are separated under `src/navigation/`; screens are under `src/screens/` |
-| Documentation/comments | Complex drawer behavior is commented in `SettingsDrawerNavigator.tsx` |
-| Clean code | Route constants use `SCREENS`; params are typed; navigation exports go through the navigation barrel |
-| Custom components | Screens use custom buttons, cards, inputs, top actions, bottom actions, and modals |
-| Error handling | Missing route params render `AlertModal` instead of crashing |
+| Modularity | API requests live in `src/services/*Api.ts`; UI remains in `src/screens` and `src/components` |
+| Documentation | Request, ranking, fallback, and caching logic has code comments where the behavior is non-trivial |
+| Clean code | API URLs are constants in `src/services/constants.ts`; route names use `SCREENS`; API response types live in `src/services/types.ts` |
+| Secret handling | Real keys stay in local `.env`; `.env.example` documents required variable names without exposing values |
 
 ## Running The Project
 
@@ -173,7 +137,13 @@ Install dependencies:
 npm install
 ```
 
-Start Metro:
+Create local environment variables:
+
+```sh
+cp .env.example .env
+```
+
+Fill `.env` with API keys, then start Metro:
 
 ```sh
 npm run start
@@ -191,8 +161,9 @@ Run Android:
 npm run android
 ```
 
-Run tests:
+Run verification:
 
 ```sh
+npm run lint
 npm test -- --runInBand
 ```

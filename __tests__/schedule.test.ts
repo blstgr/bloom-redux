@@ -9,9 +9,7 @@ const TEST_SPECIES: PlantSpecies = {
   image: 1,
   speciesId: 'test-species',
   speciesName: 'Test species',
-  wateringDay: '1',
   wateringIntervalDays: 10,
-  wateringMonth: 'Jan',
 };
 
 function createOwnedPlant(overrides: Partial<OwnedPlant>): OwnedPlant {

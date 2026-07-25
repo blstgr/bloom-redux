@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, StyleSheet } from 'react-native';
+import { Image, Linking, StyleSheet } from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
 
 import { AlertModal } from '../components/ui/AlertModal';
@@ -14,17 +14,32 @@ import { sizes } from '../theme';
 
 const CAMERA_CAPTURE_QUALITY = 0.8;
 // Temporary dev/simulator mock user capture: iOS Simulator has no real camera, but the
-// add/search camera flow still needs to remain navigable. Remove this fallback for release
-// once real device capture is the only supported path.
-const TEMP_SIMULATOR_CAMERA_IMAGE = mockSpecies[0].detailImage;
+// add/search camera flow still needs to remain navigable. A real photo-library picker (task:
+// simulator photo picker) will replace this later — for now, picking a random bundled species
+// photo per screen visit at least exercises identification against more than one fixed image.
+// Remove this fallback for release once real device capture is the only supported path.
+const SIMULATOR_FALLBACK_IMAGES = mockSpecies.map(species => species.detailImage);
+
+function pickRandomSimulatorImage() {
+  const index = Math.floor(Math.random() * SIMULATOR_FALLBACK_IMAGES.length);
+  return SIMULATOR_FALLBACK_IMAGES[index];
+}
+
 const CAMERA_UNAVAILABLE_ERROR_CODE = 'camera_unavailable';
+const CAMERA_PERMISSION_ERROR_CODE = 'permission';
+const PERMISSION_ALERT_TEXT = 'Camera access needed to identify your plants.';
+const PERMISSION_ACTION_LABEL = 'Open Settings';
 
 export function AddPlantCameraScreen({ navigation, route }: AddPlantCameraScreenProps) {
   const { createDetection } = usePlantData();
   const mode = route.params?.mode;
   const [alertText, setAlertText] = React.useState<string | null>(null);
+  const [permissionDenied, setPermissionDenied] = React.useState(false);
   const [capturing, setCapturing] = React.useState(false);
   const capturingRef = React.useRef(false);
+  // Picked once per screen visit so the fallback preview and the eventually-"captured" photo
+  // (if the real camera is unavailable) always match each other.
+  const [simulatorFallbackImage] = React.useState(pickRandomSimulatorImage);
 
   const continueWithImage = React.useCallback((image: Parameters<typeof createDetection>[0]) => {
     const detection = createDetection(image);
@@ -48,7 +63,7 @@ export function AddPlantCameraScreen({ navigation, route }: AddPlantCameraScreen
         saveToPhotos: false,
       });
     } catch {
-      continueWithImage(TEMP_SIMULATOR_CAMERA_IMAGE);
+      continueWithImage(simulatorFallbackImage);
       return;
     } finally {
       capturingRef.current = false;
@@ -60,7 +75,12 @@ export function AddPlantCameraScreen({ navigation, route }: AddPlantCameraScreen
     const imageUri = result.assets?.[0]?.uri;
     if (result.errorCode || !imageUri) {
       if (result.errorCode === CAMERA_UNAVAILABLE_ERROR_CODE) {
-        continueWithImage(TEMP_SIMULATOR_CAMERA_IMAGE);
+        continueWithImage(simulatorFallbackImage);
+        return;
+      }
+
+      if (result.errorCode === CAMERA_PERMISSION_ERROR_CODE) {
+        setPermissionDenied(true);
         return;
       }
 
@@ -69,7 +89,7 @@ export function AddPlantCameraScreen({ navigation, route }: AddPlantCameraScreen
     }
 
     continueWithImage({ uri: imageUri });
-  }, [continueWithImage]);
+  }, [continueWithImage, simulatorFallbackImage]);
 
   return (
     <ScreenLayout
@@ -99,12 +119,24 @@ export function AddPlantCameraScreen({ navigation, route }: AddPlantCameraScreen
           )}
         />
       )}>
-      <Image source={TEMP_SIMULATOR_CAMERA_IMAGE} style={styles.previewImage} />
+      <Image source={simulatorFallbackImage} style={styles.previewImage} />
       {alertText ? (
         <AlertModal
           onClose={() => setAlertText(null)}
           text={alertText}
           variant="error"
+          visible
+        />
+      ) : null}
+      {permissionDenied ? (
+        <AlertModal
+          actionLabel={PERMISSION_ACTION_LABEL}
+          onClose={() => {
+            setPermissionDenied(false);
+            Linking.openSettings();
+          }}
+          text={PERMISSION_ALERT_TEXT}
+          variant="info"
           visible
         />
       ) : null}

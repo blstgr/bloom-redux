@@ -10,21 +10,44 @@ import Animated, {
 
 import { AlertModal } from '../components/ui/AlertModal';
 import { AppText } from '../components/ui/AppText';
+import { Loader } from '../components/ui/Loader';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { TopActions } from '../components/ui/TopActions';
-import { usePlantData } from '../features/plants/data/PlantDataProvider';
+import type { PlantSpecies } from '../features/plants/data/mockPlants';
+import { usePlantData, type SpeciesLookupFailureReason } from '../features/plants/data/PlantDataProvider';
 import { SCREENS, type SpeciesInfoScreenProps } from '../navigation';
 import { layout, spacing } from '../theme';
 
 const ARTICLE_HERO_HEIGHT = 388;
 const ARTICLE_HERO_COLLAPSED_HEIGHT = 141;
 const ARTICLE_HERO_COLLAPSE_DISTANCE = ARTICLE_HERO_HEIGHT - ARTICLE_HERO_COLLAPSED_HEIGHT;
-const ARTICLE_PARAGRAPH_COUNT = 5;
+// Mock/demo species (Storybook, seed data) have no generated wikiArticle — fall back to
+// repeating the one real sentence they do have, purely so that path still renders something.
+const FALLBACK_ARTICLE_PARAGRAPH_COUNT = 5;
 const SCROLL_EVENT_THROTTLE_MS = 16;
+const RESOLVE_ERROR_TEXT = "Couldn't open this plant. Try again.";
+const RATE_LIMITED_TEXT = "We're getting a lot of requests right now. Please try again in a moment.";
+
+type ArticleParagraph = { id: string; text: string };
+
+function getArticleParagraphs(species: PlantSpecies): ArticleParagraph[] {
+  const paragraphs = species.wikiArticle
+    ? species.wikiArticle.split('\n\n').filter(paragraph => paragraph.trim().length > 0)
+    : Array.from({ length: FALLBACK_ARTICLE_PARAGRAPH_COUNT }, () => species.description);
+
+  return paragraphs.map((text, position) => ({ id: `${species.speciesId}-paragraph-${position}`, text }));
+}
+
+function getResolveErrorText(reason: SpeciesLookupFailureReason): string {
+  return reason === 'rate-limited' ? RATE_LIMITED_TEXT : RESOLVE_ERROR_TEXT;
+}
 
 export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps) {
-  const { getSpeciesById } = usePlantData();
-  const species = getSpeciesById(route.params?.speciesId);
+  const { addSearchHistoryEntry, getSpeciesById, resolveSpeciesById } = usePlantData();
+  const speciesIdParam = route.params?.speciesId;
+  const species = getSpeciesById(speciesIdParam);
+  const [resolveErrorText, setResolveErrorText] = React.useState<string | null>(null);
+  const resolvingIdRef = React.useRef<string | null>(null);
   const scrollY = useSharedValue(0);
   const handleScroll = useAnimatedScrollHandler(event => {
     scrollY.value = event.contentOffset.y;
@@ -50,7 +73,27 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
     });
   }, [navigation]);
 
-  if (!species) {
+  // Optimistic navigation: LibraryScreen navigates here the instant a search result is tapped,
+  // before the full species (facts, photo, generated copy) has resolved — resolve it here instead
+  // of blocking the tap, so the transition itself feels instant and only this screen shows a wait.
+  React.useEffect(() => {
+    if (!speciesIdParam || species || resolvingIdRef.current === speciesIdParam) return;
+
+    const perenualId = Number(speciesIdParam);
+    if (Number.isNaN(perenualId)) return;
+
+    resolvingIdRef.current = speciesIdParam;
+    resolveSpeciesById(perenualId).then(result => {
+      if (!result.success) {
+        setResolveErrorText(getResolveErrorText(result.reason));
+        return;
+      }
+
+      addSearchHistoryEntry(result.species);
+    });
+  }, [addSearchHistoryEntry, resolveSpeciesById, species, speciesIdParam]);
+
+  if (!speciesIdParam) {
     return (
       <AlertModal
         onClose={handleCloseError}
@@ -58,6 +101,35 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
         variant="error"
         visible
       />
+    );
+  }
+
+  if (!species) {
+    if (resolveErrorText) {
+      return (
+        <AlertModal
+          onClose={handleCloseError}
+          text={resolveErrorText}
+          variant="error"
+          visible
+        />
+      );
+    }
+
+    return (
+      <ScreenLayout
+        topActions={(
+          <TopActions
+            onRightPress={() => navigation.goBack()}
+            rightIcon="close"
+            rightLabel="Back"
+          />
+        )}
+        topActionsOverlay>
+        <View style={styles.loaderContainer}>
+          <Loader />
+        </View>
+      </ScreenLayout>
     );
   }
 
@@ -84,10 +156,8 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
               <AppText variant="titleXl">{species.speciesName}</AppText>
               <AppText tone="highlighted">{species.category}</AppText>
             </View>
-            {Array.from({ length: ARTICLE_PARAGRAPH_COUNT }, (_, index) => (
-              <AppText key={`${species.speciesId}-paragraph-${index}`}>
-                {species.description}
-              </AppText>
+            {getArticleParagraphs(species).map(paragraph => (
+              <AppText key={paragraph.id}>{paragraph.text}</AppText>
             ))}
           </View>
         </Animated.ScrollView>
@@ -131,6 +201,11 @@ const styles = StyleSheet.create({
   heroImageFill: {
     flex: 1,
     width: '100%',
+  },
+  loaderContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
   },
   titleStack: {
     gap: spacing.xxs,

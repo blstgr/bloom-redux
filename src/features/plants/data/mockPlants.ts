@@ -23,9 +23,10 @@ export type PlantSpecies = {
   image: ImageSourcePropType;
   speciesId: string;
   speciesName: string;
-  wateringDay: string;
   wateringIntervalDays: number;
-  wateringMonth: string;
+  /** Long, same-voice-as-description article for SpeciesInfoScreen. Only set for real
+   * Perenual/DeepSeek-sourced species — mock seed species fall back to repeating `description`. */
+  wikiArticle?: string;
 };
 
 export type OwnedPlant = {
@@ -41,13 +42,15 @@ export type OwnedPlant = {
 
 export type PlantDetection = {
   detectionId: string;
-  generatedName: string;
+  /** Unset until species identification/lookup resolves. */
+  generatedName?: string;
   image: ImageSourcePropType;
-  speciesId: string;
+  /** Unset until species identification/lookup resolves — see PlantDataProvider's
+   * identifyAndResolveSpecies/resolveSpeciesFromPerenualId. */
+  speciesId?: string;
 };
 
 const WATERING_INTERVAL_DAYS = 14;
-const RECENT_WATERING_DATE = '2026-07-05T12:00:00.000Z';
 const DETAIL_IMAGE_URLS = [
   'https://images.unsplash.com/photo-1501004318641-b39e6451bec6?w=900',
   'https://images.unsplash.com/photo-1497250681960-ef046c08a56e?w=900',
@@ -72,9 +75,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: zzPlant,
     speciesId: 'zz-plant',
     speciesName: 'ZZ plant',
-    wateringDay: '15',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
-    wateringMonth: 'May',
   },
   {
     category: 'High-Maintenance Diva',
@@ -90,9 +91,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: monsteraFull,
     speciesId: 'monstera-deliciosa',
     speciesName: 'Monstera Deliciosa',
-    wateringDay: '16',
     wateringIntervalDays: 10,
-    wateringMonth: 'May',
   },
   {
     category: 'Chaotic Overachiever',
@@ -108,9 +107,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: marbleQueenPothos,
     speciesId: 'marble-queen-pothos',
     speciesName: 'Marble Queen Pothos',
-    wateringDay: '17',
     wateringIntervalDays: 10,
-    wateringMonth: 'May',
   },
   {
     category: 'Low-Key Homebody',
@@ -126,9 +123,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: parlorPalm,
     speciesId: 'parlor-palm',
     speciesName: 'Parlor Palm',
-    wateringDay: '18',
     wateringIntervalDays: 12,
-    wateringMonth: 'May',
   },
   {
     category: 'Lucky Charm',
@@ -144,9 +139,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: moneyTree,
     speciesId: 'money-tree',
     speciesName: 'Money Tree',
-    wateringDay: '19',
     wateringIntervalDays: 12,
-    wateringMonth: 'May',
   },
   {
     category: 'Silent Guardian',
@@ -162,9 +155,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: rubberPlant,
     speciesId: 'rubber-plant',
     speciesName: 'Rubber Plant',
-    wateringDay: '20',
     wateringIntervalDays: 12,
-    wateringMonth: 'May',
   },
   {
     category: 'Dramatic Perfectionist',
@@ -180,9 +171,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: prayerPlant,
     speciesId: 'prayer-plant',
     speciesName: 'Prayer Plant',
-    wateringDay: '21',
     wateringIntervalDays: 6,
-    wateringMonth: 'May',
   },
   {
     category: 'Easygoing Buddy',
@@ -198,9 +187,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: variegatedPeperomia,
     speciesId: 'variegated-peperomia',
     speciesName: 'Variegated Peperomia',
-    wateringDay: '22',
     wateringIntervalDays: 12,
-    wateringMonth: 'May',
   },
   {
     category: 'Desert minimalist',
@@ -216,9 +203,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: temporaryMonsteraThree,
     speciesId: 'zebra-haworthia',
     speciesName: 'Zebra Haworthia',
-    wateringDay: '18',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
-    wateringMonth: 'May',
   },
   {
     category: 'Tiny survivor',
@@ -234,9 +219,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: marbleQueenPothos,
     speciesId: 'zebra-cactus',
     speciesName: 'Zebra Cactus',
-    wateringDay: '19',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
-    wateringMonth: 'May',
   },
   {
     category: 'Striped drama',
@@ -252,9 +235,7 @@ export const mockSpecies: PlantSpecies[] = [
     image: prayerPlant,
     speciesId: 'zebrina',
     speciesName: 'Zebrina',
-    wateringDay: '20',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
-    wateringMonth: 'May',
   },
   {
     category: 'Holiday bloomer',
@@ -270,94 +251,11 @@ export const mockSpecies: PlantSpecies[] = [
     image: variegatedPeperomia,
     speciesId: 'zygocactus',
     speciesName: 'Zygocactus',
-    wateringDay: '21',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
-    wateringMonth: 'May',
   },
 ];
 
-export const initialOwnedPlants: OwnedPlant[] = [
-  {
-    addedAt: '2026-06-01T09:00:00.000Z',
-    customName: 'ZZ plant',
-    image: zzPlant,
-    ownedPlantId: 'owned-plant-1',
-    speciesId: 'zz-plant',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-  {
-    addedAt: '2026-06-02T09:00:00.000Z',
-    customName: 'Monstera',
-    image: monsteraFull,
-    ownedPlantId: 'owned-plant-2',
-    speciesId: 'monstera-deliciosa',
-    wateringHistory: [],
-  },
-  {
-    addedAt: '2026-06-03T09:00:00.000Z',
-    customName: 'Monstera by the Wall',
-    image: monsteraSunset,
-    ownedPlantId: 'owned-plant-3',
-    speciesId: 'monstera-deliciosa',
-    wateringHistory: [],
-  },
-  {
-    addedAt: '2026-06-04T09:00:00.000Z',
-    customName: 'Monstera Window Leaf',
-    image: temporaryMonsteraThree,
-    ownedPlantId: 'owned-plant-4',
-    speciesId: 'monstera-deliciosa',
-    wateringHistory: [],
-  },
-  {
-    addedAt: '2026-06-05T09:00:00.000Z',
-    customName: 'Marble Pothos',
-    image: marbleQueenPothos,
-    ownedPlantId: 'owned-plant-5',
-    speciesId: 'marble-queen-pothos',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-  {
-    addedAt: '2026-06-06T09:00:00.000Z',
-    customName: 'Parlor Palm',
-    image: parlorPalm,
-    ownedPlantId: 'owned-plant-6',
-    speciesId: 'parlor-palm',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-  {
-    addedAt: '2026-06-07T09:00:00.000Z',
-    customName: 'Money Tree',
-    image: moneyTree,
-    ownedPlantId: 'owned-plant-7',
-    speciesId: 'money-tree',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-  {
-    addedAt: '2026-06-08T09:00:00.000Z',
-    customName: 'Rubber Plant',
-    image: rubberPlant,
-    ownedPlantId: 'owned-plant-8',
-    speciesId: 'rubber-plant',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-  {
-    addedAt: '2026-06-09T09:00:00.000Z',
-    customName: 'Prayer Plant',
-    image: prayerPlant,
-    ownedPlantId: 'owned-plant-9',
-    speciesId: 'prayer-plant',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-  {
-    addedAt: '2026-06-10T09:00:00.000Z',
-    customName: 'Peperomia',
-    image: variegatedPeperomia,
-    ownedPlantId: 'owned-plant-10',
-    speciesId: 'variegated-peperomia',
-    wateringHistory: [RECENT_WATERING_DATE],
-  },
-];
+export const initialOwnedPlants: OwnedPlant[] = [];
 
 export function getSpeciesById(speciesId: string | undefined) {
   return mockSpecies.find(species => species.speciesId === speciesId);

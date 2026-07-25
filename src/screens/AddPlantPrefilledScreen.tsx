@@ -48,7 +48,7 @@ export function AddPlantPrefilledScreen({
 
     if (result.duplicate) {
       setAlertText(result.message);
-      setCustomName(detection.generatedName);
+      setCustomName(detection.generatedName ?? '');
       return;
     }
 

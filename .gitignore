@@ -75,3 +75,6 @@ storybook-static/
 !.yarn/sdks
 !.yarn/versions
 .vercel
+
+# API keys
+.env
