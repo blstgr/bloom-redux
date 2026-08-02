@@ -2,7 +2,7 @@ import React from 'react';
 import { act, create } from 'react-test-renderer';
 
 import { getSpeciesDetails, PlantApiError, searchSpecies } from '../../../services/plantApi';
-import { generateSpeciesCopy } from '../../../services/plantCopyApi';
+import { generateSpeciesCopy, PlantCopyApiError } from '../../../services/plantCopyApi';
 import { identifyPlant, PlantIdApiError } from '../../../services/plantIdApi';
 import type { PerenualSpeciesDetails, PerenualSpeciesListItem } from '../../../services/types';
 import { searchPhoto } from '../../../services/unsplashApi';
@@ -15,9 +15,9 @@ import {
   type SpeciesLookupResult,
 } from './PlantDataProvider';
 
-// Factory mocks (not bare jest.mock automocks) so PlantApiError/PlantIdApiError keep their real
-// constructors — automocking them would strip the `this.kind = kind` assignment, breaking the
-// provider's `error instanceof X && error.kind === '...'` checks under test.
+// Factory mocks (not bare jest.mock automocks) so PlantApiError/PlantIdApiError/PlantCopyApiError
+// keep their real constructors — automocking them would strip the `this.kind = kind` assignment,
+// breaking the provider's `error instanceof X && error.kind === '...'` checks under test.
 jest.mock('../../../services/plantApi', () => ({
   ...jest.requireActual('../../../services/plantApi'),
   getSpeciesDetails: jest.fn(),
@@ -27,7 +27,10 @@ jest.mock('../../../services/plantIdApi', () => ({
   ...jest.requireActual('../../../services/plantIdApi'),
   identifyPlant: jest.fn(),
 }));
-jest.mock('../../../services/plantCopyApi');
+jest.mock('../../../services/plantCopyApi', () => ({
+  ...jest.requireActual('../../../services/plantCopyApi'),
+  generateSpeciesCopy: jest.fn(),
+}));
 jest.mock('../../../services/unsplashApi');
 
 const mockSearchSpecies = searchSpecies as jest.MockedFunction<typeof searchSpecies>;
@@ -297,6 +300,252 @@ describe('PlantDataProvider rate limiting', () => {
 
     expect(result).toEqual({ reason: 'network-error', success: false });
   });
+
+  it('resolveSpeciesById reports access-denied distinctly from a generic network error', async () => {
+    mockGetSpeciesDetails.mockRejectedValueOnce(new PlantApiError('forbidden', 'access denied'));
+    const getValue = renderProvider();
+
+    let result;
+    await act(async () => {
+      result = await getValue().resolveSpeciesById(MATCH.id);
+    });
+
+    expect(result).toEqual({ reason: 'access-denied', success: false });
+  });
+
+  it('resolveSpeciesById reports access-denied when copy generation (DeepSeek) is forbidden', async () => {
+    mockSearchPhoto.mockResolvedValue(null);
+    mockGenerateSpeciesCopy.mockRejectedValueOnce(new PlantCopyApiError('forbidden', 'access denied'));
+    const getValue = renderProvider();
+
+    let result;
+    await act(async () => {
+      result = await getValue().resolveSpeciesById(MATCH.id, undefined, 'ZZ plant');
+    });
+
+    expect(result).toEqual({ reason: 'access-denied', success: false });
+  });
+
+  it('identifyAndResolveSpecies reports access-denied when Pl@ntNet rejects the request (e.g. IP not allowed)', async () => {
+    mockIdentifyPlant.mockRejectedValueOnce(new PlantIdApiError('forbidden', 'remote IP not allowed'));
+    const getValue = renderProvider();
+
+    let result;
+    await act(async () => {
+      result = await getValue().identifyAndResolveSpecies({ uri: 'file:///captured.jpg' });
+    });
+
+    expect(result).toEqual({ reason: 'access-denied', success: false });
+  });
+});
+
+describe('PlantDataProvider identifyAndResolveSpecies name fallback', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockSearchPhoto.mockResolvedValue(null);
+    mockGenerateSpeciesCopy.mockResolvedValue({
+      category: 'Independent Roommate',
+      description: 'desc',
+      wikiArticle: 'article',
+    });
+  });
+
+  it('retries with the scientific name when Pl@ntNet\'s common name has no Perenual match', async () => {
+    // Reproduces a real, confirmed case: Pl@ntNet returns "Honeyplant" for a Hoya carnosa
+    // capture, and Perenual's species-list has zero matches for that exact common name, even
+    // though it does index the same plant under its scientific name.
+    mockIdentifyPlant.mockResolvedValueOnce([
+      {
+        score: 0.9,
+        species: {
+          commonNames: ['Honeyplant'],
+          family: { scientificNameWithoutAuthor: 'Apocynaceae' },
+          genus: { scientificNameWithoutAuthor: 'Hoya' },
+          scientificNameWithoutAuthor: 'Hoya carnosa',
+        },
+      },
+    ]);
+    mockSearchSpecies
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { common_name: 'Wax plant', default_image: null, id: 77, scientific_name: ['Hoya carnosa'] },
+      ]);
+
+    const getValue = renderProvider();
+
+    let result!: SpeciesLookupResult;
+    await act(async () => {
+      result = await getValue().identifyAndResolveSpecies({ uri: 'file:///captured.jpg' });
+    });
+
+    expect(mockSearchSpecies).toHaveBeenNthCalledWith(1, 'Honeyplant');
+    expect(mockSearchSpecies).toHaveBeenNthCalledWith(2, 'Hoya carnosa');
+    expect(result.success && result.species.speciesName).toBe('Wax plant');
+  });
+
+  it('falls back to the genus when both the common name and scientific name have no Perenual match', async () => {
+    // Reproduces a real, confirmed case: Perenual has zero matches for "Moneytree" (the common
+    // name) or "Pachira glabra" (the specific scientific name) — it simply doesn't carry that
+    // species at all — but it does carry other species in the same genus, "Pachira".
+    mockIdentifyPlant.mockResolvedValueOnce([
+      {
+        score: 0.9,
+        species: {
+          commonNames: ['Moneytree'],
+          family: { scientificNameWithoutAuthor: 'Malvaceae' },
+          genus: { scientificNameWithoutAuthor: 'Pachira' },
+          scientificNameWithoutAuthor: 'Pachira glabra',
+        },
+      },
+    ]);
+    mockSearchSpecies
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { common_name: 'Guiana chestnut', default_image: null, id: 88, scientific_name: ['Pachira aquatica'] },
+      ]);
+
+    const getValue = renderProvider();
+
+    let result!: SpeciesLookupResult;
+    await act(async () => {
+      result = await getValue().identifyAndResolveSpecies({ uri: 'file:///captured.jpg' });
+    });
+
+    expect(mockSearchSpecies).toHaveBeenNthCalledWith(1, 'Moneytree');
+    expect(mockSearchSpecies).toHaveBeenNthCalledWith(2, 'Pachira glabra');
+    expect(mockSearchSpecies).toHaveBeenNthCalledWith(3, 'Pachira');
+    expect(result.success && result.species.speciesName).toBe('Guiana chestnut');
+  });
+
+  it('does not retry when every name tier collapses to the same single distinct name', async () => {
+    mockIdentifyPlant.mockResolvedValueOnce([
+      {
+        score: 0.9,
+        species: {
+          commonNames: [],
+          family: { scientificNameWithoutAuthor: 'Araceae' },
+          genus: { scientificNameWithoutAuthor: 'Rhaphidophora tetrasperma' },
+          scientificNameWithoutAuthor: 'Rhaphidophora tetrasperma',
+        },
+      },
+    ]);
+    mockSearchSpecies.mockResolvedValueOnce([]);
+
+    const getValue = renderProvider();
+
+    let result!: SpeciesLookupResult;
+    await act(async () => {
+      result = await getValue().identifyAndResolveSpecies({ uri: 'file:///captured.jpg' });
+    });
+
+    expect(mockSearchSpecies).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ reason: 'no-perenual-match', success: false });
+  });
+
+  it('does not retry when the common name search fails for a reason other than no-match', async () => {
+    mockIdentifyPlant.mockResolvedValueOnce([
+      {
+        score: 0.9,
+        species: {
+          commonNames: ['Honeyplant'],
+          family: { scientificNameWithoutAuthor: 'Apocynaceae' },
+          genus: { scientificNameWithoutAuthor: 'Hoya' },
+          scientificNameWithoutAuthor: 'Hoya carnosa',
+        },
+      },
+    ]);
+    mockSearchSpecies.mockRejectedValueOnce(new PlantApiError('forbidden', 'access denied'));
+
+    const getValue = renderProvider();
+
+    let result!: SpeciesLookupResult;
+    await act(async () => {
+      result = await getValue().identifyAndResolveSpecies({ uri: 'file:///captured.jpg' });
+    });
+
+    expect(mockSearchSpecies).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({ reason: 'access-denied', success: false });
+  });
+});
+
+describe('PlantDataProvider species/details MOCKED fallback', () => {
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockSearchSpecies.mockResolvedValue([MATCH]);
+    // Only exercised by the "no name available" test below — every knownName path now skips this
+    // call entirely rather than waiting on it to fail, so this rejection stands in for what the
+    // real (confirmed permanently blocked) endpoint would do if it were ever actually called.
+    mockGetSpeciesDetails.mockRejectedValue(new PlantApiError('forbidden', 'Please Upgrade Plan'));
+    mockSearchPhoto.mockResolvedValue('https://images.unsplash.com/zz-plant.jpg');
+    mockGenerateSpeciesCopy.mockResolvedValue({
+      category: 'Independent Roommate',
+      description: 'Likes bright indirect light.',
+      wikiArticle: 'A longer article.',
+    });
+  });
+
+  it('lookupSpeciesByName succeeds with an accurate name/image without ever calling the blocked species/details endpoint', async () => {
+    const getValue = renderProvider();
+
+    let result: SpeciesLookupResult;
+    await act(async () => {
+      result = await getValue().lookupSpeciesByName('ZZ plant');
+    });
+
+    expect(result!).toEqual({
+      species: expect.objectContaining({
+        // Name comes from Perenual's own search match (real), not anything invented here.
+        speciesName: 'ZZ plant',
+        // Care facts come from this app's curated seed data via the name match, not fabricated.
+        isToxicToPets: true,
+        lightNeed: 'bright',
+        wateringIntervalDays: 14,
+        // The photo still comes from the real (unmocked-here) Unsplash call.
+        detailImageUrl: 'https://images.unsplash.com/zz-plant.jpg',
+      }),
+      success: true,
+    });
+    // The name (from the real search match) was already known, so the guaranteed-to-fail
+    // species/details round trip should never have been attempted.
+    expect(mockGetSpeciesDetails).not.toHaveBeenCalled();
+  });
+
+  it('resolveSpeciesById still fails (no name available to build a fallback from, so the live call is attempted and fails)', async () => {
+    const getValue = renderProvider();
+
+    let result;
+    await act(async () => {
+      result = await getValue().resolveSpeciesById(MATCH.id);
+    });
+
+    expect(result).toEqual({ reason: 'access-denied', success: false });
+    expect(mockGetSpeciesDetails).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats an empty-string knownName the same as no knownName at all (attempts the live call, does not use the synthesized fallback)', async () => {
+    const getValue = renderProvider();
+
+    let result;
+    await act(async () => {
+      result = await getValue().resolveSpeciesById(MATCH.id, undefined, '');
+    });
+
+    expect(result).toEqual({ reason: 'access-denied', success: false });
+    expect(mockGetSpeciesDetails).toHaveBeenCalledTimes(1);
+  });
+
+  it('resolveSpeciesById succeeds and skips the live call when a knownName is passed directly (e.g. from a tapped search result)', async () => {
+    const getValue = renderProvider();
+
+    let result: SpeciesLookupResult;
+    await act(async () => {
+      result = await getValue().resolveSpeciesById(MATCH.id, undefined, 'ZZ plant');
+    });
+
+    expect(result!.success).toBe(true);
+    expect(mockGetSpeciesDetails).not.toHaveBeenCalled();
+  });
 });
 
 describe('PlantDataProvider concurrent resolution', () => {
@@ -324,6 +573,91 @@ describe('PlantDataProvider concurrent resolution', () => {
     expect(mockGetSpeciesDetails).toHaveBeenCalledTimes(1);
     expect(mockGenerateSpeciesCopy).toHaveBeenCalledTimes(1);
     expect(first).toEqual(second);
+  });
+
+  it('a concurrent knownName caller still succeeds even when a same-id no-name caller already has a doomed live call in flight', async () => {
+    mockGetSpeciesDetails.mockRejectedValue(new PlantApiError('forbidden', 'Please Upgrade Plan'));
+    mockSearchPhoto.mockResolvedValue('https://images.unsplash.com/zz-plant.jpg');
+    const getValue = renderProvider();
+
+    let withoutName!: SpeciesLookupResult;
+    let withName!: SpeciesLookupResult;
+    await act(async () => {
+      // Started first, with no knownName — this attempt is doomed to hit the confirmed-blocked
+      // live species/details call and fail. A same-id caller with a knownName must not be forced
+      // to await (and fail alongside) this one.
+      const withoutNamePromise = getValue().resolveSpeciesById(MATCH.id);
+      const withNamePromise = getValue().resolveSpeciesById(MATCH.id, undefined, 'ZZ plant');
+      [withoutName, withName] = await Promise.all([withoutNamePromise, withNamePromise]);
+    });
+
+    expect(withoutName).toEqual({ reason: 'access-denied', success: false });
+    expect(withName.success).toBe(true);
+  });
+
+  it('reuses a still-pending no-knownName resolution instead of starting a duplicate call, even after an earlier knownName resolution for the same id already failed and cleaned up its own slot', async () => {
+    let rejectDetails!: (error: unknown) => void;
+    mockGetSpeciesDetails.mockImplementationOnce(
+      () => new Promise((_resolve, reject) => { rejectDetails = reject; }),
+    );
+    mockSearchPhoto.mockResolvedValue('https://images.unsplash.com/zz-plant.jpg');
+    // B's own copy-generation call fails, so B never reaches the point where it would populate
+    // the shared core cache — its slot cleanup is the only thing that runs, which is what this
+    // test needs to isolate (a B that instead succeeded would populate the cache directly, and C
+    // would hit that cache before ever touching the in-flight map at all).
+    mockGenerateSpeciesCopy.mockRejectedValueOnce(new Error('DeepSeek unavailable'));
+    const getValue = renderProvider();
+
+    let withoutNameA!: Promise<SpeciesLookupResult>;
+    await act(async () => {
+      // A: no knownName — kicks off the (controlled, still-pending) live species/details call.
+      withoutNameA = getValue().resolveSpeciesById(MATCH.id);
+      // B: knownName — skips the live call via the fast synthesized path, but fails on copy
+      // generation, fully finishing (including its own in-flight-slot cleanup) while A is still
+      // pending and without ever populating the shared core cache.
+      const resultB = await getValue().resolveSpeciesById(MATCH.id, undefined, 'ZZ plant');
+      expect(resultB.success).toBe(false);
+    });
+
+    expect(mockGetSpeciesDetails).toHaveBeenCalledTimes(1);
+
+    let withoutNameC!: Promise<SpeciesLookupResult>;
+    await act(async () => {
+      // C: no knownName, arriving after B already cleaned up its slot — must reuse A's
+      // still-pending entry, not start a second live species/details call.
+      withoutNameC = getValue().resolveSpeciesById(MATCH.id);
+    });
+
+    expect(mockGetSpeciesDetails).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      rejectDetails(new PlantApiError('forbidden', 'Please Upgrade Plan'));
+    });
+
+    await expect(withoutNameA).resolves.toEqual({ reason: 'access-denied', success: false });
+    await expect(withoutNameC).resolves.toEqual({ reason: 'access-denied', success: false });
+  });
+
+  it('does not let two concurrent callers with different known names for the same speciesId silently share one result', async () => {
+    mockSearchPhoto.mockResolvedValue(null);
+    const getValue = renderProvider();
+
+    let resultA!: SpeciesLookupResult;
+    let resultB!: SpeciesLookupResult;
+    await act(async () => {
+      // Same speciesId, two different known names — e.g. a Library search match.common_name vs.
+      // a separate Pl@ntNet identification's name for a species that happens to share this id.
+      const promiseA = getValue().resolveSpeciesById(MATCH.id, undefined, 'ZZ plant');
+      const promiseB = getValue().resolveSpeciesById(MATCH.id, undefined, 'Zanzibar Gem');
+      [resultA, resultB] = await Promise.all([promiseA, promiseB]);
+    });
+
+    expect(resultA.success && resultA.species.speciesName).toBe('ZZ plant');
+    expect(resultB.success && resultB.species.speciesName).toBe('Zanzibar Gem');
+    // Both names skip the confirmed-blocked live species/details call entirely — neither should
+    // have needed it, and reusing the wrong in-flight entry is exactly what would have made one
+    // of these two calls wrongly attempt it (or wrongly inherit the other's name).
+    expect(mockGetSpeciesDetails).not.toHaveBeenCalled();
   });
 
   it('never lets one caller\'s fallback image leak into a concurrent caller\'s result for the same species', async () => {

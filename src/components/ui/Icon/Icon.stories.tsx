@@ -20,8 +20,9 @@ type Story = StoryObj<typeof meta>;
 
 const iconRows: IconName[][] = [
   ['camera', 'check', 'circle', 'close', 'dropHappy', 'dropSad', 'edit'],
-  ['flash', 'flashOff', 'google', 'home', 'info', 'more', 'plant'],
-  ['plus', 'schedule', 'trash', 'water'],
+  ['flash', 'flashOff', 'google', 'heart', 'heartSelected', 'home', 'info'],
+  ['library', 'minus', 'more', 'plant', 'plus', 'repeat', 'schedule'],
+  ['search', 'sun', 'trash', 'water'],
 ];
 
 export const All: Story = {

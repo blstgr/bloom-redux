@@ -6,6 +6,7 @@ export type {
   AddPlantPrefilledScreenProps,
   AddPlantStackParamList,
   AuthStartScreenProps,
+  FavoritesScreenProps,
   HomeScreenProps,
   LibraryScreenProps,
   PlantDetailScreenProps,

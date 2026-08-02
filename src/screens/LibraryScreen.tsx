@@ -28,6 +28,9 @@ const SEARCH_RESULTS_TOP_GAP = spacing.md;
 // Standard search-as-you-type practice (Google, GitHub, etc). Below this, Perenual's substring
 // match is too broad to be useful — nearly every name contains any single common letter somewhere.
 const MIN_SEARCH_QUERY_LENGTH = 2;
+// Delays the actual Perenual request until typing pauses, so a full word costs one request
+// instead of one per keystroke — Perenual's free-tier daily cap is easy to exhaust otherwise.
+const SEARCH_DEBOUNCE_MS = 350;
 
 /** Scientific names carry punctuation ("Maranta leuconeura 'Erythroneura'") that a plain word
  * split leaves attached ("'erythroneura'") — strip anything that isn't a letter from each token's
@@ -113,27 +116,29 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
     const requestId = searchRequestIdRef.current + 1;
     searchRequestIdRef.current = requestId;
 
-    searchSpecies(normalizedQuery)
-      .then(items => {
-        if (searchRequestIdRef.current !== requestId) return;
-        // Only keep results actually relevant to what was typed (see rankByRelevance above for
-        // why Perenual's own matches need this), ranked so the closest matches come first; no
-        // weak coincidental substring hits.
-        const relevantItems = items
-          .map(item => ({ item, rank: rankByRelevance(item, normalizedQuery) }))
-          .filter((entry): entry is { item: PerenualSpeciesListItem; rank: number } => entry.rank !== null)
-          .sort((a, b) => a.rank - b.rank)
-          .map(entry => entry.item);
-        setResults(relevantItems.slice(0, MAX_RESULTS));
-        setSearchError(false);
-      })
-      .catch(() => {
-        if (searchRequestIdRef.current !== requestId) return;
-        setResults([]);
-        setSearchError(true);
-      });
+    const debounceTimeout = setTimeout(() => {
+      searchSpecies(normalizedQuery)
+        .then(items => {
+          if (searchRequestIdRef.current !== requestId) return;
+          // Only keep results actually relevant to what was typed (see rankByRelevance above for
+          // why Perenual's own matches need this), ranked so the closest matches come first; no
+          // weak coincidental substring hits.
+          const relevantItems = items
+            .map(item => ({ item, rank: rankByRelevance(item, normalizedQuery) }))
+            .filter((entry): entry is { item: PerenualSpeciesListItem; rank: number } => entry.rank !== null)
+            .sort((a, b) => a.rank - b.rank)
+            .map(entry => entry.item);
+          setResults(relevantItems.slice(0, MAX_RESULTS));
+          setSearchError(false);
+        })
+        .catch(() => {
+          if (searchRequestIdRef.current !== requestId) return;
+          setResults([]);
+          setSearchError(true);
+        });
+    }, SEARCH_DEBOUNCE_MS);
 
-    return undefined;
+    return () => clearTimeout(debounceTimeout);
   }, [isSearching, normalizedQuery]);
 
   const handleNavigateTab = React.useCallback(
@@ -164,7 +169,10 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
   // before the tap even seems to register.
   const handleSelectSearchResult = React.useCallback(
     (item: PerenualSpeciesListItem) => {
-      rootNavigation?.navigate(SCREENS.SPECIES_INFO, { speciesId: String(item.id) });
+      rootNavigation?.navigate(SCREENS.SPECIES_INFO, {
+        speciesId: String(item.id),
+        speciesName: item.common_name,
+      });
     },
     [rootNavigation],
   );

@@ -7,6 +7,8 @@ const TEST_SPECIES: PlantSpecies = {
   detailImage: 1,
   detailImageUrl: 'https://example.com/detail.jpg',
   image: 1,
+  isToxicToPets: false,
+  lightNeed: 'bright',
   speciesId: 'test-species',
   speciesName: 'Test species',
   wateringIntervalDays: 10,

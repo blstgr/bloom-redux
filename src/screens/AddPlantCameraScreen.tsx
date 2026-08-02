@@ -13,6 +13,11 @@ import { SCREENS, type AddPlantCameraScreenProps } from '../navigation';
 import { sizes } from '../theme';
 
 const CAMERA_CAPTURE_QUALITY = 0.8;
+// Full sensor resolution (often 3000-4000px) is wasted upload size for both plant-ID inference
+// and this app's own display sizes (grid tiles, article hero) — none of them need more than a
+// retina-sharp image. Capping here shrinks the identify upload, the single slowest call in the
+// resolution pipeline, without any visible quality loss.
+const CAMERA_CAPTURE_MAX_DIMENSION = 1280;
 // Temporary dev/simulator mock user capture: iOS Simulator has no real camera, but the
 // add/search camera flow still needs to remain navigable. A real photo-library picker (task:
 // simulator photo picker) will replace this later — for now, picking a random bundled species
@@ -58,6 +63,8 @@ export function AddPlantCameraScreen({ navigation, route }: AddPlantCameraScreen
     try {
       result = await launchCamera({
         cameraType: 'back',
+        maxHeight: CAMERA_CAPTURE_MAX_DIMENSION,
+        maxWidth: CAMERA_CAPTURE_MAX_DIMENSION,
         mediaType: 'photo',
         quality: CAMERA_CAPTURE_QUALITY,
         saveToPhotos: false,

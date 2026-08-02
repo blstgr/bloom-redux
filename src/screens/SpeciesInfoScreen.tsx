@@ -1,5 +1,5 @@
 import React from 'react';
-import { ImageBackground, StyleSheet, View } from 'react-native';
+import { Image, ImageBackground, StyleSheet, View, type ImageSourcePropType } from 'react-native';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -16,6 +16,8 @@ import { TopActions } from '../components/ui/TopActions';
 import type { PlantSpecies } from '../features/plants/data/mockPlants';
 import { usePlantData, type SpeciesLookupFailureReason } from '../features/plants/data/PlantDataProvider';
 import { SCREENS, type SpeciesInfoScreenProps } from '../navigation';
+import { toggleFavorite } from '../store/favoritesSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 import { layout, spacing } from '../theme';
 
 const ARTICLE_HERO_HEIGHT = 388;
@@ -42,10 +44,28 @@ function getResolveErrorText(reason: SpeciesLookupFailureReason): string {
   return reason === 'rate-limited' ? RATE_LIMITED_TEXT : RESOLVE_ERROR_TEXT;
 }
 
+// Owned-plant photos are local files and load instantly; a species' photo is a remote Unsplash
+// URL, so favoriting warms the OS image cache immediately rather than waiting for the user to
+// tap into it from FavoritesScreen and see it load fresh.
+function prefetchIfRemote(source: ImageSourcePropType): void {
+  if (typeof source !== 'object' || Array.isArray(source) || !source.uri) return;
+
+  try {
+    Image.prefetch(source.uri)?.catch(() => {});
+  } catch {
+    // Best-effort cache warm — a failure here just means the image loads fresh later, same as
+    // before this existed.
+  }
+}
+
 export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps) {
   const { addSearchHistoryEntry, getSpeciesById, resolveSpeciesById } = usePlantData();
+  const dispatch = useAppDispatch();
   const speciesIdParam = route.params?.speciesId;
   const species = getSpeciesById(speciesIdParam);
+  const isFavorite = useAppSelector(state =>
+    state.favorites.some(favorite => favorite.speciesId === speciesIdParam),
+  );
   const [resolveErrorText, setResolveErrorText] = React.useState<string | null>(null);
   const resolvingIdRef = React.useRef<string | null>(null);
   const scrollY = useSharedValue(0);
@@ -72,18 +92,40 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
       screen: SCREENS.MAIN_TABS,
     });
   }, [navigation]);
+  const handleToggleFavorite = React.useCallback(() => {
+    if (!species) return;
+
+    if (!isFavorite) {
+      prefetchIfRemote(species.image);
+      prefetchIfRemote(species.detailImage);
+    }
+
+    dispatch(toggleFavorite({
+      addedAt: new Date().toISOString(),
+      image: species.image,
+      speciesId: species.speciesId,
+      speciesName: species.speciesName,
+    }));
+  }, [dispatch, isFavorite, species]);
 
   // Optimistic navigation: LibraryScreen navigates here the instant a search result is tapped,
   // before the full species (facts, photo, generated copy) has resolved — resolve it here instead
   // of blocking the tap, so the transition itself feels instant and only this screen shows a wait.
   React.useEffect(() => {
-    if (!speciesIdParam || species || resolvingIdRef.current === speciesIdParam) return;
+    if (!speciesIdParam || species || resolvingIdRef.current === speciesIdParam) return undefined;
 
     const perenualId = Number(speciesIdParam);
-    if (Number.isNaN(perenualId)) return;
+    if (Number.isNaN(perenualId)) return undefined;
 
     resolvingIdRef.current = speciesIdParam;
-    resolveSpeciesById(perenualId).then(result => {
+    let cancelled = false;
+
+    resolveSpeciesById(perenualId, undefined, route.params?.speciesName).then(result => {
+      // The user may have already navigated away (e.g. backed out before resolution finished)
+      // while this was in flight — don't act on a stale result against a screen that's no longer
+      // active.
+      if (cancelled) return;
+
       if (!result.success) {
         setResolveErrorText(getResolveErrorText(result.reason));
         return;
@@ -91,7 +133,11 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
 
       addSearchHistoryEntry(result.species);
     });
-  }, [addSearchHistoryEntry, resolveSpeciesById, species, speciesIdParam]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [addSearchHistoryEntry, resolveSpeciesById, route.params?.speciesName, species, speciesIdParam]);
 
   if (!speciesIdParam) {
     return (
@@ -137,6 +183,10 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
     <ScreenLayout
       topActions={(
         <TopActions
+          leftAccessibilityState={{ selected: isFavorite }}
+          leftIcon={isFavorite ? 'heartSelected' : 'heart'}
+          leftLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          onLeftPress={handleToggleFavorite}
           onRightPress={() => navigation.goBack()}
           rightIcon="close"
           rightLabel="Back"

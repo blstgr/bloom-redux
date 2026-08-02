@@ -1,7 +1,9 @@
-import type { PerenualDimensions, PerenualSpeciesDetails, PotSizeBucket, RepottingYearsBucket, ResolvedCareFacts } from './types';
+import type { PerenualDimensions, PerenualSpeciesDetails, PlantLightNeed, PotSizeBucket, RepottingYearsBucket, ResolvedCareFacts } from './types';
 
 const DEFAULT_WATERING_INTERVAL_DAYS = 7;
 const DEFAULT_REPOTTING_YEARS: RepottingYearsBucket = '2-3';
+const DEFAULT_LIGHT_NEED: PlantLightNeed = 'bright';
+const SHADE_KEYWORD = 'shade';
 
 const SMALL_MAX_HEIGHT_CM = 30;
 const MEDIUM_MAX_HEIGHT_CM = 100;
@@ -57,6 +59,16 @@ function resolvePotSizeBucket(dimensions: PerenualDimensions[] | null): PotSizeB
   return 'large';
 }
 
+/** Only an explicit shade mention (e.g. Perenual's "part shade"/"full shade") buckets as
+ * shade-tolerant — every other listed condition (sun-loving, filtered light, etc) wants bright
+ * light, so it defaults there rather than to an ambiguous middle bucket. */
+function resolveLightNeed(sunlight: string[] | null): PlantLightNeed {
+  if (!sunlight) return DEFAULT_LIGHT_NEED;
+  return sunlight.some(condition => condition.toLowerCase().includes(SHADE_KEYWORD))
+    ? 'low'
+    : DEFAULT_LIGHT_NEED;
+}
+
 /**
  * Deterministic, species-grounded care facts derived from raw Perenual data — no LLM involved.
  * Same input always produces the same output, so DeepSeek-generated copy and WateringSchedule's
@@ -70,6 +82,7 @@ export function resolveCareFacts(details: PerenualSpeciesDetails): ResolvedCareF
 
   return {
     isToxicToPets: details.poisonous_to_pets,
+    lightNeed: resolveLightNeed(details.sunlight),
     potSizeRecommendationCm: POT_SIZE_CM_BY_BUCKET[potSizeBucket],
     repottingScheduleYears,
     wateringIntervalDays: parseWateringIntervalDays(details.watering_general_benchmark),

@@ -151,4 +151,22 @@ describe('resolveCareFacts', () => {
     expect(resolveCareFacts(buildDetails({ poisonous_to_pets: true })).isToxicToPets).toBe(true);
     expect(resolveCareFacts(buildDetails({ poisonous_to_pets: false })).isToxicToPets).toBe(false);
   });
+
+  describe('lightNeed', () => {
+    it('buckets an explicit shade mention as low', () => {
+      expect(resolveCareFacts(buildDetails({ sunlight: ['part shade'] })).lightNeed).toBe('low');
+    });
+
+    it('is case-insensitive when matching shade', () => {
+      expect(resolveCareFacts(buildDetails({ sunlight: ['Full Shade'] })).lightNeed).toBe('low');
+    });
+
+    it('buckets a non-shade condition as bright', () => {
+      expect(resolveCareFacts(buildDetails({ sunlight: ['full sun'] })).lightNeed).toBe('bright');
+    });
+
+    it('falls back to bright when sunlight is null', () => {
+      expect(resolveCareFacts(buildDetails({ sunlight: null })).lightNeed).toBe('bright');
+    });
+  });
 });

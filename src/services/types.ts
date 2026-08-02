@@ -56,9 +56,13 @@ export type PlantNetIdentifyResponse = {
 
 export type PotSizeBucket = 'large' | 'medium' | 'small';
 export type RepottingYearsBucket = '1-2' | '2-3' | '3-4';
+/** Binary by design (favorites' light-preference tab is framed as "likes light" vs "tolerates
+ * shade", not a 3-way split) — see docs/favs-spec.md. */
+export type PlantLightNeed = 'bright' | 'low';
 
 export type ResolvedCareFacts = {
   isToxicToPets: boolean;
+  lightNeed: PlantLightNeed;
   potSizeRecommendationCm: string;
   repottingScheduleYears: RepottingYearsBucket;
   wateringIntervalDays: number;
@@ -77,6 +81,8 @@ export type IdentificationResult =
 // Unsplash `search/photos` response shape (only the fields this app reads).
 
 export type UnsplashPhoto = {
+  alt_description: string | null;
+  description: string | null;
   urls: { regular: string };
 };
 

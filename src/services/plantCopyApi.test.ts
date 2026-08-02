@@ -1,10 +1,11 @@
 import { PLANT_DESCRIPTION_MAX_CHARS } from '../features/plants/data/plantDescription';
 
-import { generateSpeciesCopy, PlantCopyApiError } from './plantCopyApi';
+import { generateSpeciesCopy, PlantCopyApiError, WIKI_ARTICLE_MAX_CHARS } from './plantCopyApi';
 import type { GeneratedSpeciesCopy, PerenualSpeciesDetails, ResolvedCareFacts } from './types';
 
 const RESOLVED_FACTS: ResolvedCareFacts = {
   isToxicToPets: false,
+  lightNeed: 'bright',
   potSizeRecommendationCm: '2-4',
   repottingScheduleYears: '2-3',
   wateringIntervalDays: 14,
@@ -55,21 +56,33 @@ describe('generateSpeciesCopy', () => {
     expect(await generateSpeciesCopy(RESOLVED_FACTS, RAW_DETAILS)).toEqual(copy);
   });
 
-  it('regenerates once with a tighter budget when the description overflows', async () => {
+  it('regenerates only the description (not category/wikiArticle) when it overflows', async () => {
     const tooLong: GeneratedSpeciesCopy = {
       category: 'Independent Roommate',
       description: 'x'.repeat(PLANT_DESCRIPTION_MAX_CHARS + 50),
       wikiArticle: 'A longer article.',
     };
-    const fitsAfterRetry: GeneratedSpeciesCopy = {
+    const fetchMock = jest.fn();
+    fetchMock.mockResolvedValueOnce({
+      json: () => Promise.resolve({ choices: [{ message: { content: JSON.stringify(tooLong) } }] }),
+      ok: true,
+    });
+    // The retry is a much smaller request: it asks for (and the mock here returns) only a
+    // "description" field, not a full category/description/wikiArticle payload.
+    fetchMock.mockResolvedValueOnce({
+      json: () => Promise.resolve({
+        choices: [{ message: { content: JSON.stringify({ description: 'A properly sized description.' }) } }],
+      }),
+      ok: true,
+    });
+    global.fetch = fetchMock as unknown as typeof fetch;
+
+    const result = await generateSpeciesCopy(RESOLVED_FACTS, RAW_DETAILS);
+    expect(result).toEqual({
       category: 'Independent Roommate',
       description: 'A properly sized description.',
       wikiArticle: 'A longer article.',
-    };
-    const fetchMock = mockChatCompletion(tooLong, fitsAfterRetry);
-
-    const result = await generateSpeciesCopy(RESOLVED_FACTS, RAW_DETAILS);
-    expect(result).toEqual(fitsAfterRetry);
+    });
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
@@ -87,10 +100,34 @@ describe('generateSpeciesCopy', () => {
     expect(result.description.endsWith('.')).toBe(true);
   });
 
+  it('trims an overlong wikiArticle to a hard character backstop, without ever regenerating it', async () => {
+    // Unlike description, wikiArticle never gets a retry call — the whole point of capping it was
+    // to cut latency, and a retry call would undo that. Only a deterministic trim.
+    const sentence = 'x'.repeat(WIKI_ARTICLE_MAX_CHARS - 10);
+    const tooLong: GeneratedSpeciesCopy = {
+      category: 'Independent Roommate',
+      description: 'Short description.',
+      wikiArticle: `${sentence}. ${'y'.repeat(50)}.`,
+    };
+    const fetchMock = mockChatCompletion(tooLong);
+
+    const result = await generateSpeciesCopy(RESOLVED_FACTS, RAW_DETAILS);
+    expect(result.wikiArticle.length).toBeLessThanOrEqual(WIKI_ARTICLE_MAX_CHARS);
+    expect(result.wikiArticle.endsWith('.')).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it('throws a network PlantCopyApiError when fetch rejects', async () => {
     global.fetch = jest.fn().mockRejectedValueOnce(new Error('offline')) as unknown as typeof fetch;
     await expect(generateSpeciesCopy(RESOLVED_FACTS, RAW_DETAILS)).rejects.toMatchObject<Partial<PlantCopyApiError>>({
       kind: 'network',
+    });
+  });
+
+  it('throws a forbidden PlantCopyApiError on a 403, distinct from unknown', async () => {
+    global.fetch = jest.fn().mockResolvedValueOnce({ ok: false, status: 403 }) as unknown as typeof fetch;
+    await expect(generateSpeciesCopy(RESOLVED_FACTS, RAW_DETAILS)).rejects.toMatchObject<Partial<PlantCopyApiError>>({
+      kind: 'forbidden',
     });
   });
 

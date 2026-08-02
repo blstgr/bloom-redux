@@ -4,7 +4,7 @@ import { getPlantNetApiKey } from './config';
 import { PLANTNET_BASE_URL, PLANTNET_MIN_CONFIDENCE_SCORE, PLANTNET_MIN_SCORE_GAP, PLANTNET_PROJECT } from './constants';
 import type { IdentificationResult, PlantNetCandidate, PlantNetIdentifyResponse } from './types';
 
-export type PlantIdApiErrorKind = 'network' | 'quota-exceeded' | 'unknown';
+export type PlantIdApiErrorKind = 'forbidden' | 'network' | 'quota-exceeded' | 'unknown';
 
 export class PlantIdApiError extends Error {
   kind: PlantIdApiErrorKind;
@@ -17,6 +17,7 @@ export class PlantIdApiError extends Error {
 }
 
 const QUOTA_EXCEEDED_STATUS = 429;
+const FORBIDDEN_STATUS = 403;
 // Pl@ntNet auto-detects which plant organ is in frame rather than requiring the caller to
 // specify leaf/flower/fruit/bark up front.
 const IDENTIFY_ORGAN = 'auto';
@@ -26,6 +27,14 @@ const IDENTIFY_IMAGE_TYPE = 'image/jpeg';
 // come back in the requester's inferred locale, which then fails to match Perenual's
 // English-only species database downstream.
 const IDENTIFY_LANG = 'en';
+
+async function readResponseBody(response: Response): Promise<string> {
+  try {
+    return await response.text();
+  } catch {
+    return '';
+  }
+}
 
 /** POSTs a captured/selected photo to Pl@ntNet and returns its ranked candidate list. */
 export async function identifyPlant(image: ImageSourcePropType): Promise<PlantNetCandidate[]> {
@@ -49,21 +58,62 @@ export async function identifyPlant(image: ImageSourcePropType): Promise<PlantNe
   }
 
   if (response.status === QUOTA_EXCEEDED_STATUS) {
-    throw new PlantIdApiError('quota-exceeded', 'Plant identification quota exceeded for today.');
+    // Pl@ntNet returns 429 for both a burst-rate throttle and the daily quota being exhausted —
+    // its response body is the only way to tell which, so surface it directly rather than a
+    // generic message that looks identical for either cause.
+    const body = await readResponseBody(response);
+    throw new PlantIdApiError(
+      'quota-exceeded',
+      `Plant identification quota exceeded for today.${body ? ` Response: ${body}` : ''}`,
+    );
+  }
+
+  if (response.status === FORBIDDEN_STATUS) {
+    // Distinct from every other failure: this means the key/IP itself is rejected (e.g. an
+    // IP-allowlist mismatch), not a bad photo or a temporary network blip — bucketing it with
+    // those would tell the user to "try better lighting" for a problem that has nothing to do
+    // with the photo.
+    const body = await readResponseBody(response);
+    throw new PlantIdApiError(
+      'forbidden',
+      `Plant identification access denied.${body ? ` Response: ${body}` : ''}`,
+    );
   }
 
   if (!response.ok) {
-    throw new PlantIdApiError('unknown', `Plant identification failed with status ${response.status}.`);
+    const body = await readResponseBody(response);
+    throw new PlantIdApiError(
+      'unknown',
+      `Plant identification failed with status ${response.status}.${body ? ` Response: ${body}` : ''}`,
+    );
   }
 
   const payload = (await response.json()) as PlantNetIdentifyResponse;
   return payload.results;
 }
 
+/** The name identifyAndResolveSpecies would actually search Perenual with for this candidate —
+ * used to tell a genuinely ambiguous runner-up (a different plant) from a harmless one (the same
+ * plant appearing twice, e.g. two catalog entries both called "Mini monstera"). */
+function resolvedCandidateName(candidate: PlantNetCandidate): string {
+  return candidate.species.commonNames[0] ?? candidate.species.scientificNameWithoutAuthor;
+}
+
+/** Case/whitespace-insensitive comparison — confirmed live that Pl@ntNet's own catalog entries
+ * for the same plant can differ only in spacing/capitalization (e.g. "Rubberplant" vs. "Rubber
+ * Plant"), which raw string equality would wrongly treat as two different plants. */
+function normalizeForComparison(name: string): string {
+  return name.toLowerCase().replace(/\s+/g, '');
+}
+
 /**
  * Shared accept/reject decision so AddPlantLoaderScreen and LibraryScreen's photo search can
- * never disagree on what counts as a confident match. Requires both a minimum absolute score and
- * a minimum gap over the runner-up, so two similarly-scored candidates don't get auto-accepted.
+ * never disagree on what counts as a confident match. Requires a minimum absolute score. A close
+ * runner-up only rejects the match if it's for a genuinely different plant — confirmed against
+ * real responses that Pl@ntNet can return near-tied top-2 candidates that are the same plant under
+ * slightly different catalog names (e.g. "Mini monstera"/"Mini monstera" at 0.42/0.39, and
+ * "Rubberplant"/"Rubber Plant" at 0.51/0.46), which the old gap check rejected as ambiguous even
+ * though every candidate resolves to the exact same downstream search.
  */
 export function resolveIdentification(candidates: PlantNetCandidate[]): IdentificationResult {
   const [top, second] = candidates;
@@ -72,8 +122,15 @@ export function resolveIdentification(candidates: PlantNetCandidate[]): Identifi
     return { accepted: false, reason: 'no-candidates' };
   }
 
+  if (top.score < PLANTNET_MIN_CONFIDENCE_SCORE) {
+    return { accepted: false, reason: 'low-confidence' };
+  }
+
   const gap = top.score - (second?.score ?? 0);
-  if (top.score < PLANTNET_MIN_CONFIDENCE_SCORE || gap < PLANTNET_MIN_SCORE_GAP) {
+  const runnerUpIsDifferentPlant =
+    second !== undefined &&
+    normalizeForComparison(resolvedCandidateName(second)) !== normalizeForComparison(resolvedCandidateName(top));
+  if (runnerUpIsDifferentPlant && gap < PLANTNET_MIN_SCORE_GAP) {
     return { accepted: false, reason: 'low-confidence' };
   }
 

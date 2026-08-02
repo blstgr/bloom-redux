@@ -4,6 +4,7 @@ export const SCREENS = {
   ADD_PLANT_PREFILLED: 'AddPlantPrefilled',
   ADD_PLANT_STACK: 'AddPlantStack',
   AUTH_START: 'AuthStart',
+  FAVORITES: 'Favorites',
   HOME: 'Home',
   LIBRARY: 'Library',
   MAIN_TABS: 'MainTabs',

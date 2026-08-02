@@ -1,169 +1,176 @@
-# Bloom API Integration
+# Bloom - Global State Management
 
-Bloom is a React Native plant-care app. This implementation connects the app to real plant-related REST APIs, stores API results in screen/provider state, renders searchable species results in a `FlatList`, handles API errors and longer loading flows, and opens a details screen from each selected result.
+Bloom is a React Native plant-care app: identify plants by photo, track owned plants and their
+watering schedule, browse a plant wiki, and save favorites.
 
-## API Selection
+## Aspects Needing Global State
 
-The app uses public REST APIs that match the plant-care theme:
+Three aspects of the app were identified as needing state shared across multiple, unrelated
+screens rather than local `useState`:
 
-| API | Purpose | Local wrapper |
+| Aspect | Why it needs global state | Chosen for |
 | --- | --- | --- |
-| Perenual | Search indoor species and fetch species care details | `src/services/plantApi.ts` |
-| Pl@ntNet | Identify a plant from a captured image | `src/services/plantIdApi.ts` |
-| Unsplash | Find a usable species photo when Perenual has no real image | `src/services/unsplashApi.ts` |
-| DeepSeek | Generate short and long care copy from resolved plant facts | `src/services/plantCopyApi.ts` |
+| Resolved plant/species data (detections, owned plants, search history) | Read and written from `HomeScreen`, `LibraryScreen`, `WaterScreen`, `FavoritesScreen`, `SpeciesInfoScreen`, `AddPlantLoaderScreen`, `AddPlantPrefilledScreen`, and `PlantDetailScreen` — passing it down as props through the navigator would mean threading it through every intermediate screen | **Context API** |
+| Favorites (which species the user has hearted) | Toggled from `SpeciesInfoScreen`, read by `MainTabBar` (to conditionally show the heart nav item) and `FavoritesScreen` (to render the list) — three screens with no parent/child relationship to each other | **Redux** |
+| User session / auth state | `AuthStartScreen` exists as the app's entry screen; a real login would need session state readable app-wide (e.g. to gate navigation, show a logged-in email in Settings) | Identified, not yet implemented — this project has no real backend auth yet, so it's intentionally left out of scope for this assignment |
 
-The primary list/search requirement is implemented with Perenual:
+## Context API: `PlantDataProvider`
 
-- `searchSpecies(name)` sends `GET /species-list?q=<name>&indoor=1`.
-- `getSpeciesDetails(id)` sends `GET /species/details/{id}`.
+**Context + Provider** (`src/features/plants/data/PlantDataProvider.tsx`):
 
-API base URLs are centralized in `src/services/constants.ts`.
+```tsx
+const PlantDataContext = React.createContext<PlantDataContextValue | null>(null);
 
-## Demo
+export function PlantDataProvider({ children, initialOwnedPlants = defaultInitialOwnedPlants }: PlantDataProviderProps) {
+  const [ownedPlants, setOwnedPlants] = React.useState<OwnedPlant[]>(initialOwnedPlants);
+  // ...detections, search history, and resolved-species caches also live here as state/refs
 
-**Add plant** — capture a photo, Pl@ntNet identifies the species, Perenual care facts resolve, and the plant is saved to the gallery.
+  const markWatered = React.useCallback((ownedPlantId: string) => {
+    setOwnedPlants(current =>
+      current.map(plant =>
+        plant.ownedPlantId === ownedPlantId
+          ? { ...plant, wateringHistory: [...plant.wateringHistory, new Date().toISOString()] }
+          : plant,
+      ),
+    );
+  }, []);
 
-![Add plant demo](<docs/screenshots/bloom - api - add plant.gif>)
+  // ...saveDetection, deleteOwnedPlant, renameOwnedPlant, resolveSpeciesById, etc.
 
-**Detect plant** — identify a plant by photo from the Library tab and view its full species article, without adding it as an owned plant.
+  const value = React.useMemo<PlantDataContextValue>(() => ({ /* ...all state + functions */ }), [/* deps */]);
 
-![Detect plant demo](<docs/screenshots/bloom - api - identify plant.gif>)
+  return <PlantDataContext.Provider value={value}>{children}</PlantDataContext.Provider>;
+}
 
-**Error handling** — the plant is identified by Pl@ntNet, but Perenual has no matching care-info entry for it; the app shows a graceful fallback instead of fabricating watering/toxicity facts.
-
-![Error handling demo](<docs/screenshots/bloom - api - error.gif>)
-
-## API Integration
-
-Network logic is modularized under `src/services/` instead of being embedded directly in screens.
-
-Example from `src/services/plantApi.ts`:
-
-```ts
-export async function searchSpecies(name: string): Promise<PerenualSpeciesListItem[]> {
-  const query = encodeURIComponent(name);
-  const payload = await fetchPerenual<PerenualSpeciesListResponse>(`/species-list?q=${query}&indoor=1`);
-  return payload.data;
+export function usePlantData() {
+  const value = React.useContext(PlantDataContext);
+  if (!value) throw new Error('usePlantData must be used inside PlantDataProvider');
+  return value;
 }
 ```
 
-The app uses `fetch` for API calls. API keys are read from `@env` through `src/services/config.ts`; real values belong in local `.env`, which is gitignored. Use `.env.example` as the template:
-
-```env
-PERENUAL_API_KEY=
-PLANTNET_API_KEY=
-DEEPSEEK_API_KEY=
-UNSPLASH_ACCESS_KEY=
-```
-
-State is handled with React state:
-
-- `LibraryScreen.tsx` stores the typed query, search results, and search errors with `useState`.
-- `PlantDataProvider.tsx` stores resolved species, detections, owned plants, and search history.
-
-Comments in the service and screen files document why requests are filtered, debounced, ranked, and cached.
-
-## Displaying Data In A List
-
-The plant wiki search lives in `src/screens/LibraryScreen.tsx`.
-
-Search results from Perenual are rendered with `FlatList` inside `SearchResultSection`:
+**Root integration** (`src/navigation/RootNavigator.tsx`) — the provider wraps the entire app,
+above the navigation container, nested inside the Redux `<Provider>` (aliased as `StoreProvider`
+below, since both libraries call their wrapper `Provider`):
 
 ```tsx
-<FlatList
-  data={items}
-  keyExtractor={keyExtractor}
-  renderItem={({ item }) => (
-    <Pressable onPress={() => onSelect(item)} style={styles.resultRow}>
-      <Icon color={colors.icon.primary} name="search" size="sm" />
-      <AppText>{labelExtractor(item)}</AppText>
-    </Pressable>
-  )}
-  scrollEnabled={false}
-/>
+<StoreProvider store={store}>
+  <PlantDataProvider>
+    <NavigationContainer>
+      <Stack.Navigator>{/* ...all screens */}</Stack.Navigator>
+    </NavigationContainer>
+  </PlantDataProvider>
+</StoreProvider>
 ```
 
-The row uses existing app UI components (`Icon`, `AppText`) and the existing design-system styling. Each item has a stable key based on the API species id.
-
-## Loading And Error Handling
-
-`LibraryScreen.tsx` keeps the search suggestion area focused on results:
-
-- Suggestions: matching species are rendered in the `FlatList` as soon as `searchSpecies()` returns.
-- Error: network or API failures show a readable message: `Couldn't load search results. Check your connection and try again.`
-
-Longer API flows use explicit loading UI:
-
-- `PlantDataProvider.tsx` converts Perenual and Pl@ntNet rate limits into explicit `rate-limited` results.
-- `AddPlantLoaderScreen.tsx` shows retry/retake messaging for failed photo identification.
-- `SpeciesInfoScreen.tsx` shows a loader while details resolve and an error modal when details cannot be opened.
-
-## Navigation Integration
-
-The API-backed list is integrated into the existing Library tab.
-
-When the user taps a Perenual result, `LibraryScreen.tsx` navigates to the details screen and passes the species id:
+**Interaction logic that changes context state** — e.g. `WaterScreen.tsx`, marking a plant watered
+from a swipe/dismiss action:
 
 ```tsx
-rootNavigation?.navigate(SCREENS.SPECIES_INFO, {
-  speciesId: String(item.id),
+const { markWatered, ... } = usePlantData();
+// ...
+<WateringCard onDismiss={() => markWatered(ownedPlant.ownedPlantId)} ... />
+```
+
+**Applied to 2 components via `useContext`** — every consumer goes
+through the `usePlantData()` hook, which is `React.useContext(PlantDataContext)` under the hood:
+
+- `HomeScreen.tsx` — `const { getSpeciesById, ownedPlants } = usePlantData();` renders the owned-plant
+  grid and reacts to `ownedPlants.length` to switch between empty/populated layouts.
+- `WaterScreen.tsx` — `const { getSpeciesById, markWatered, ownedPlants } = usePlantData();` renders
+  the due-for-watering list and dispatches `markWatered`/`unmarkWatered` from `WateringSlider`.
+- `FavoritesScreen.tsx`, `SpeciesInfoScreen.tsx`, `AddPlantLoaderScreen.tsx`, `PlantDetailScreen.tsx`
+  all also consume `usePlantData()` for species lookups, detection resolution, or saving a new plant.
+
+## Redux: `favoritesSlice`
+
+**Packages** — already installed (`package.json`): `@reduxjs/toolkit` and `react-redux`.
+
+**Slice** (`src/store/favoritesSlice.ts`):
+
+```ts
+const favoritesSlice = createSlice({
+  name: 'favorites',
+  initialState: [] as FavoritesState,
+  reducers: {
+    addFavorite: (state, action: PayloadAction<FavoriteItem>) => {
+      const alreadyPresent = state.some(item => item.speciesId === action.payload.speciesId);
+      if (!alreadyPresent) state.push(action.payload);
+    },
+    removeFavorite: (state, action: PayloadAction<string>) =>
+      state.filter(item => item.speciesId !== action.payload),
+    // The "update" reducer: favorites are a membership list (no quantity field to change), so its
+    // natural equivalent of an update is a state-dependent add-or-remove transition rather than a
+    // plain push/filter — it reads current state and branches on it, same as changing a quantity
+    // reads the current quantity and branches on it.
+    toggleFavorite: (state, action: PayloadAction<FavoriteItem>) => {
+      const existingIndex = state.findIndex(item => item.speciesId === action.payload.speciesId);
+      if (existingIndex === -1) {
+        state.push(action.payload);
+      } else {
+        state.splice(existingIndex, 1);
+      }
+    },
+  },
+});
+
+export const { addFavorite, removeFavorite, toggleFavorite } = favoritesSlice.actions;
+export default favoritesSlice.reducer;
+```
+
+**Store** (`src/store/store.ts`) via `configureStore`, connected via `<Provider>` in
+`RootNavigator.tsx` (`<StoreProvider store={store}>`, aliasing `Provider` from `react-redux`):
+
+```ts
+export const store = configureStore({
+  reducer: { favorites: favoritesReducer },
 });
 ```
 
-`SpeciesInfoScreen.tsx` reads `route.params.speciesId`, resolves the full species details through `resolveSpeciesById`, and renders the article/details once the data is available.
+**Screen integration** — `SpeciesInfoScreen.tsx` dispatches the update, keyed by the tapped
+species' id passed through as data (the "props for dynamic data" requirement from Task 4):
 
-The camera search flow also connects to navigation:
+```tsx
+const dispatch = useAppDispatch();
+const isFavorite = useAppSelector(state => state.favorites.some(favorite => favorite.speciesId === speciesIdParam));
 
-- `AddPlantCameraScreen` captures or simulates a plant image.
-- `AddPlantLoaderScreen` identifies and resolves the plant through the service layer.
-- Add mode navigates to `AddPlantPrefilled`.
-- Search mode navigates directly to `SpeciesInfo`.
+const handleToggleFavorite = React.useCallback(() => {
+  dispatch(toggleFavorite({
+    addedAt: new Date().toISOString(),
+    image: species.image,
+    speciesId: species.speciesId,
+    speciesName: species.speciesName,
+  }));
+}, [dispatch, isFavorite, species]);
+```
+
+`FavoritesScreen.tsx` reads and renders the list with `useSelector` (via the typed `useAppSelector`
+wrapper in `src/store/hooks.ts`):
+
+```tsx
+const favorites = useAppSelector(state => state.favorites);
+const favoritedSpecies = favorites
+  .map(favorite => getSpeciesById(favorite.speciesId)) // cross-references Context data by id
+  .filter((species): species is PlantSpecies => species != null);
+```
+
+`MainTabBar.tsx` also reads `useAppSelector(state => state.favorites.length)` to conditionally show
+the heart nav item — a third, independent consumer of the same Redux state.
 
 ## Additional Requirements
 
-| Requirement | Implementation |
+| Requirement | Where it's satisfied |
 | --- | --- |
-| Modularity | API requests live in `src/services/*Api.ts`; UI remains in `src/screens` and `src/components` |
-| Documentation | Request, ranking, fallback, and caching logic has code comments where the behavior is non-trivial |
-| Clean code | API URLs are constants in `src/services/constants.ts`; route names use `SCREENS`; API response types live in `src/services/types.ts` |
-| Secret handling | Real keys stay in local `.env`; `.env.example` documents required variable names without exposing values |
+| Modularity — context/slice in their own files | Context: `src/features/plants/data/PlantDataProvider.tsx`. Redux: `src/store/favoritesSlice.ts` (slice), `src/store/store.ts` (store setup), `src/store/hooks.ts` (typed `useAppSelector`/`useAppDispatch`) — none of this lives inside a screen or component file |
+| Props — dynamic data passed where needed | `speciesId` flows as the dispatch payload key (`toggleFavorite({ speciesId, ... })`, `removeFavorite(speciesId)`); `ownedPlantId` is passed into `markWatered(ownedPlantId)`/`unmarkWatered(ownedPlantId)`; `PlantCard`'s `onPress` closes over the specific `species.speciesId` per rendered item |
+| No magic numbers | Named constants throughout, e.g. `MAX_SEARCH_HISTORY`, `FIRST_MATCH_INDEX`, `INITIAL_OWNED_PLANT_INDEX` in `PlantDataProvider.tsx`; colors/spacing come from `src/theme` tokens, never inline hex/pixel values |
+| Comments on non-obvious logic | e.g. `PlantDataProvider.tsx`'s in-flight/cache de-dup logic, `resolveSpeciesById`'s fallback-image isolation, and `favoritesSlice.ts`'s `toggleFavorite` comment above explain *why*, not just *what* |
 
-## Running The Project
+## Demo
 
-Install dependencies:
+Favoriting a plant from its article (Redux `toggleFavorite`, dispatched with that plant's
+`speciesId`) and then opening the Favorites list (Redux `useSelector` + Context `getSpeciesById`
+resolving each favorite's full species data together):
 
-```sh
-npm install
-```
+![Context API + Redux demo — favoriting a plant and viewing the Favorites list](<docs/screenshots/bloom - favs.gif>)
 
-Create local environment variables:
-
-```sh
-cp .env.example .env
-```
-
-Fill `.env` with API keys, then start Metro:
-
-```sh
-npm run start
-```
-
-Run iOS:
-
-```sh
-npm run ios
-```
-
-Run Android:
-
-```sh
-npm run android
-```
-
-Run verification:
-
-```sh
-npm run lint
-npm test -- --runInBand
-```

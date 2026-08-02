@@ -1,6 +1,13 @@
 import React from 'react';
 import { type ReactNode } from 'react';
-import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  type AccessibilityState,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 import { colors, radii, sizes, spacing } from '../../../theme';
 import { AppText } from '../AppText';
@@ -10,6 +17,7 @@ import { Icon, type IconName } from '../Icon';
 type TopActionsBaseProps = {
   onMore?: () => void;
   onRightPress?: () => void;
+  rightAccessibilityState?: AccessibilityState;
   rightAction?: ReactNode;
   rightIcon?: IconName;
   rightLabel?: string;
@@ -19,6 +27,7 @@ type TopActionsBaseProps = {
 
 type CenteredTopActionsProps = TopActionsBaseProps & {
   mode?: 'centered';
+  leftAccessibilityState?: AccessibilityState;
   leftAction?: ReactNode;
   leftIcon?: IconName;
   leftLabel?: string;
@@ -27,6 +36,7 @@ type CenteredTopActionsProps = TopActionsBaseProps & {
 };
 
 type HeroTopActionsProps = TopActionsBaseProps & {
+  leftAccessibilityState?: never;
   leftAction?: never;
   leftIcon?: never;
   leftLabel?: never;
@@ -42,10 +52,12 @@ const TOP_ACTION_RADIUS_RATIO = 0.5;
 const HERO_TITLE_WIDTH = 198;
 
 function TopActionButton({
+  accessibilityState,
   icon,
   label,
   onPress,
 }: {
+  accessibilityState?: AccessibilityState;
   icon: IconName;
   label: string;
   onPress?: () => void;
@@ -58,6 +70,7 @@ function TopActionButton({
       <TouchableOpacity
         accessibilityLabel={label}
         accessibilityRole="button"
+        accessibilityState={accessibilityState}
         activeOpacity={GLASS_BUTTON_ACTIVE_OPACITY}
         onPress={onPress}
         style={styles.topActionButton}>
@@ -72,11 +85,19 @@ function renderAction(
   icon: IconName | undefined,
   label: string | undefined,
   onPress: (() => void) | undefined,
+  accessibilityState?: AccessibilityState,
 ) {
   if (action) return action;
   if (!icon) return null;
 
-  return <TopActionButton icon={icon} label={label ?? icon} onPress={onPress} />;
+  return (
+    <TopActionButton
+      accessibilityState={accessibilityState}
+      icon={icon}
+      label={label ?? icon}
+      onPress={onPress}
+    />
+  );
 }
 
 export function TopActions(props: TopActionsProps) {
@@ -84,6 +105,7 @@ export function TopActions(props: TopActionsProps) {
     mode = 'centered',
     onMore,
     onRightPress,
+    rightAccessibilityState,
     rightAction,
     rightIcon,
     rightLabel,
@@ -95,6 +117,7 @@ export function TopActions(props: TopActionsProps) {
     rightIcon ?? (onMore ? 'more' : undefined),
     rightLabel ?? (onMore ? 'More options' : undefined),
     onRightPress ?? onMore,
+    rightAccessibilityState,
   );
 
   if (mode === 'hero') {
@@ -117,6 +140,7 @@ export function TopActions(props: TopActionsProps) {
     props.leftIcon ?? (props.onClose ? 'close' : undefined),
     props.leftLabel ?? (props.onClose ? 'Close' : undefined),
     props.onLeftPress ?? props.onClose,
+    props.leftAccessibilityState,
   );
 
   return (

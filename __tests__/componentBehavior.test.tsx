@@ -1,15 +1,18 @@
 import React from 'react';
 import { TextInput, TouchableOpacity } from 'react-native';
+import { Provider as StoreProvider } from 'react-redux';
 import ReactTestRenderer from 'react-test-renderer';
 
 import { Button } from '../src/components/ui/Button';
 import { Input } from '../src/components/ui/Input';
 import { NavBar, type NavItem } from '../src/components/ui/NavBar';
+import { Tabs, type TabItem } from '../src/components/ui/Tabs';
 import { PlantDataProvider } from '../src/features/plants/data/PlantDataProvider';
 import { SettingsRow } from '../src/features/settings/components/SettingsPanel';
 import { WateringSlider } from '../src/features/watering/components/WateringSlider';
 import { SCREENS } from '../src/navigation/constants';
 import { MainTabBar } from '../src/navigation/MainTabBar';
+import { store } from '../src/store/store';
 import { colors } from '../src/theme';
 
 function render(element: React.ReactElement) {
@@ -197,18 +200,39 @@ describe('component behavior', () => {
     expect(onPlantsPress).toHaveBeenCalledTimes(1);
   });
 
+  it('marks a single active tab and reports presses by key', () => {
+    const onTabPress = jest.fn();
+    const tabs: TabItem[] = [
+      { key: 'all', label: 'All' },
+      { key: 'diva', label: 'High-Maintenance' },
+    ];
+    const renderer = render(<Tabs activeKey="all" onTabPress={onTabPress} tabs={tabs} />);
+    const tabButtons = renderer.root.findAllByType(TouchableOpacity);
+
+    expect(tabButtons[0].props.accessibilityState.selected).toBe(true);
+    expect(tabButtons[1].props.accessibilityState.selected).toBe(false);
+
+    ReactTestRenderer.act(() => {
+      tabButtons[1].props.onPress();
+    });
+
+    expect(onTabPress).toHaveBeenCalledWith('diva');
+  });
+
   it('keeps the main add-plant action visually inactive on every tab', () => {
     const tabScreens = [SCREENS.HOME, SCREENS.LIBRARY, SCREENS.WATER] as const;
 
     for (const activeScreen of tabScreens) {
       const renderer = render(
-        <PlantDataProvider initialOwnedPlants={[]}>
-          <MainTabBar
-            activeScreen={activeScreen}
-            onAddPlant={jest.fn()}
-            onNavigate={jest.fn()}
-          />
-        </PlantDataProvider>,
+        <StoreProvider store={store}>
+          <PlantDataProvider initialOwnedPlants={[]}>
+            <MainTabBar
+              activeScreen={activeScreen}
+              onAddPlant={jest.fn()}
+              onNavigate={jest.fn()}
+            />
+          </PlantDataProvider>
+        </StoreProvider>,
       );
       const addButton = renderer.root
         .findAllByProps({ accessibilityLabel: 'Add plant' })

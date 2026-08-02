@@ -10,6 +10,8 @@ import EditIcon from '../../../assets/icons/edit.svg';
 import FlashOffIcon from '../../../assets/icons/flash-off.svg';
 import FlashIcon from '../../../assets/icons/flash.svg';
 import GoogleIcon from '../../../assets/icons/google.svg';
+import HeartSelectedIcon from '../../../assets/icons/heart-selected.svg';
+import HeartIcon from '../../../assets/icons/heart.svg';
 import HomeIcon from '../../../assets/icons/home.svg';
 import InfoIcon from '../../../assets/icons/info.svg';
 import LibraryIcon from '../../../assets/icons/library.svg';
@@ -36,6 +38,8 @@ export type IconName =
   | 'flash'
   | 'flashOff'
   | 'google'
+  | 'heart'
+  | 'heartSelected'
   | 'home'
   | 'info'
   | 'library'
@@ -79,6 +83,8 @@ const iconComponents: Record<IconName, React.ComponentType<SvgProps>> = {
   flash: FlashIcon,
   flashOff: FlashOffIcon,
   google: GoogleIcon,
+  heart: HeartIcon,
+  heartSelected: HeartSelectedIcon,
   home: HomeIcon,
   info: InfoIcon,
   library: LibraryIcon,

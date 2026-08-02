@@ -18,9 +18,13 @@ const IDENTIFICATION_FAILURE_TEXT =
 const CARE_INFO_UNAVAILABLE_TEXT =
   "We identified this plant, but don't have care info for it yet. Try another plant.";
 const RATE_LIMITED_TEXT = "We're getting a lot of requests right now. Please try again in a moment.";
+// Distinct from IDENTIFICATION_FAILURE_TEXT on purpose — this is an access problem (e.g. an
+// IP-allowlist mismatch), not a bad photo, so it shouldn't tell the user to retake it.
+const ACCESS_DENIED_TEXT = "We're having trouble reaching our plant ID service right now. Please try again later.";
 const RETAKE_ACTION_LABEL = 'Retake';
 
 const FAILURE_TEXT_BY_REASON: Record<SpeciesLookupFailureReason, string> = {
+  'access-denied': ACCESS_DENIED_TEXT,
   'low-confidence': IDENTIFICATION_FAILURE_TEXT,
   'network-error': IDENTIFICATION_FAILURE_TEXT,
   'no-candidates': IDENTIFICATION_FAILURE_TEXT,

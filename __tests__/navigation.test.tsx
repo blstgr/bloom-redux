@@ -1,25 +1,33 @@
+import { configureStore } from '@reduxjs/toolkit';
 import React from 'react';
+import { TouchableOpacity } from 'react-native';
 import { launchCamera } from 'react-native-image-picker';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Provider as StoreProvider } from 'react-redux';
 import ReactTestRenderer from 'react-test-renderer';
 
+import { AppText } from '../src/components/ui/AppText';
 import { Button } from '../src/components/ui/Button';
-import { mockSpecies, type OwnedPlant } from '../src/features/plants/data/mockPlants';
-import { PlantDataProvider } from '../src/features/plants/data/PlantDataProvider';
+import { mockSpecies, type OwnedPlant, type PlantSpecies } from '../src/features/plants/data/mockPlants';
+import { PlantDataProvider, usePlantData } from '../src/features/plants/data/PlantDataProvider';
 import {
   SCREENS,
   type AddPlantCameraScreenProps,
+  type FavoritesScreenProps,
   type LibraryScreenProps,
   type PlantDetailScreenProps,
   type SpeciesInfoScreenProps,
 } from '../src/navigation';
 import { AddPlantCameraScreen } from '../src/screens/AddPlantCameraScreen';
+import { FavoritesScreen } from '../src/screens/FavoritesScreen';
 import { LibraryScreen } from '../src/screens/LibraryScreen';
 import { PlantDetailScreen } from '../src/screens/PlantDetailScreen';
 import { SpeciesInfoScreen } from '../src/screens/SpeciesInfoScreen';
 import { getSpeciesDetails, searchSpecies } from '../src/services/plantApi';
 import { generateSpeciesCopy } from '../src/services/plantCopyApi';
 import { searchPhoto } from '../src/services/unsplashApi';
+import favoritesReducer from '../src/store/favoritesSlice';
+import { store } from '../src/store/store';
 
 jest.mock('react-native-image-picker');
 jest.mock('../src/services/plantApi');
@@ -31,6 +39,9 @@ const mockedSearchSpecies = jest.mocked(searchSpecies);
 const mockedGetSpeciesDetails = jest.mocked(getSpeciesDetails);
 const mockedGenerateSpeciesCopy = jest.mocked(generateSpeciesCopy);
 const mockedSearchPhoto = jest.mocked(searchPhoto);
+// Comfortably above LibraryScreen's own SEARCH_DEBOUNCE_MS (350ms) so real-timer tests reliably
+// let the debounced search fire before asserting on its result.
+const SEARCH_DEBOUNCE_FLUSH_MS = 600;
 beforeEach(() => {
   jest.clearAllMocks();
   // LibraryScreen's search-as-you-type debounce can still fire after a test body returns (real
@@ -116,6 +127,29 @@ function createSpeciesInfoProps(
   } as unknown as SpeciesInfoScreenProps;
 }
 
+function createFavoritesProps(
+  tabNavigate = jest.fn(),
+  rootNavigate = jest.fn(),
+  openDrawer = jest.fn(),
+): FavoritesScreenProps {
+  return {
+    navigation: {
+      getParent: () => ({
+        getParent: () => ({
+          navigate: rootNavigate,
+        }),
+        openDrawer,
+      }),
+      navigate: tabNavigate,
+    },
+    route: {
+      key: SCREENS.FAVORITES,
+      name: SCREENS.FAVORITES,
+      params: undefined,
+    },
+  } as unknown as FavoritesScreenProps;
+}
+
 function createAddPlantCameraProps(
   navigate = jest.fn(),
 ): AddPlantCameraScreenProps {
@@ -137,13 +171,16 @@ function createAddPlantCameraProps(
 function renderWithProviders(
   children: React.ReactNode,
   initialOwnedPlants: OwnedPlant[] = [],
+  favoritesStore = store,
 ) {
   return (
-    <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
-      <PlantDataProvider initialOwnedPlants={initialOwnedPlants}>
-        {children}
-      </PlantDataProvider>
-    </SafeAreaProvider>
+    <StoreProvider store={favoritesStore}>
+      <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
+        <PlantDataProvider initialOwnedPlants={initialOwnedPlants}>
+          {children}
+        </PlantDataProvider>
+      </SafeAreaProvider>
+    </StoreProvider>
   );
 }
 
@@ -276,10 +313,15 @@ test('navigates from library search result to species info with species id', asy
     );
   });
 
-  await ReactTestRenderer.act(async () => {
+  await ReactTestRenderer.act(() => {
     renderer?.root.findByProps({ accessibilityLabel: 'Search plant wiki' }).props.onChangeText('Zebra Haworthia');
-    // Flushes LibraryScreen's immediate mocked search promise chain.
-    await new Promise(resolve => setTimeout(resolve, 0));
+  });
+
+  // A separate act() call: the one above must return (flushing the state update and the effect
+  // it triggers, which is what actually schedules the debounce timer) before this starts waiting
+  // — otherwise the wait below elapses before the timer is even scheduled.
+  await ReactTestRenderer.act(async () => {
+    await new Promise(resolve => setTimeout(resolve, SEARCH_DEBOUNCE_FLUSH_MS));
   });
 
   await ReactTestRenderer.act(() => {
@@ -293,6 +335,7 @@ test('navigates from library search result to species info with species id', asy
 
   expect(rootNavigate).toHaveBeenCalledWith(SCREENS.SPECIES_INFO, {
     speciesId: '501',
+    speciesName: 'Zebra Haworthia',
   });
 });
 
@@ -378,6 +421,189 @@ test('missing species info can close to home when there is no back route', async
   });
 });
 
+test('SpeciesInfoScreen does not act on a resolution that finishes after the screen unmounted', async () => {
+  // A probe sibling that stays mounted (inside the same, persistent PlantDataProvider) so we can
+  // observe whether the unmounted screen's resolution still reached into shared Context state.
+  let latestSearchHistory: PlantSpecies[] = [];
+  function SearchHistoryProbe() {
+    const { searchHistory } = usePlantData();
+    latestSearchHistory = searchHistory;
+    return null;
+  }
+
+  // Explicit resets (not just the top-level beforeEach's clearAllMocks, which clears call counts
+  // but leaves any *queued* mockResolvedValueOnce/mockReturnValueOnce values from earlier tests in
+  // place) so this test's controlled promise is guaranteed to be the one the code actually awaits,
+  // regardless of what ran before it in this file.
+  mockedGetSpeciesDetails.mockReset();
+  mockedGenerateSpeciesCopy.mockReset();
+
+  let resolveDetails!: (details: Awaited<ReturnType<typeof getSpeciesDetails>>) => void;
+  mockedGetSpeciesDetails.mockReturnValueOnce(
+    new Promise(resolve => {
+      resolveDetails = resolve;
+    }),
+  );
+  mockedGenerateSpeciesCopy.mockResolvedValueOnce({
+    category: 'Independent Roommate',
+    description: 'Arrived too late.',
+    wikiArticle: 'A longer article.',
+  });
+
+  function Harness({ mounted }: { mounted: boolean }) {
+    return (
+      <StoreProvider store={store}>
+        <SafeAreaProvider initialMetrics={TEST_SAFE_AREA_METRICS}>
+          <PlantDataProvider>
+            <SearchHistoryProbe />
+            {mounted ? <SpeciesInfoScreen {...createSpeciesInfoProps('999')} /> : null}
+          </PlantDataProvider>
+        </SafeAreaProvider>
+      </StoreProvider>
+    );
+  }
+
+  let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+  await ReactTestRenderer.act(() => {
+    renderer = ReactTestRenderer.create(<Harness mounted />);
+  });
+
+  // Unmount the screen (e.g. the user backed out) while its optimistic resolution is still
+  // pending — the surrounding providers (and the probe) stay mounted, mirroring how the real app
+  // keeps PlantDataProvider alive across screen navigation.
+  await ReactTestRenderer.act(() => {
+    renderer?.update(<Harness mounted={false} />);
+  });
+
+  await ReactTestRenderer.act(async () => {
+    resolveDetails({
+      care_level: 'Easy',
+      common_name: 'Late Plant',
+      default_image: null,
+      dimensions: null,
+      growth_rate: 'Low',
+      id: 999,
+      poisonous_to_humans: false,
+      poisonous_to_pets: false,
+      scientific_name: ['Latus plantus'],
+      sunlight: null,
+      watering_general_benchmark: { unit: 'days', value: '14' },
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+
+  // The resolution finished, but the screen that started it was already gone — it must not have
+  // recorded search history on the still-mounted provider.
+  expect(latestSearchHistory).toEqual([]);
+});
+
+test('toggles a species favorite from SpeciesInfoScreen and flips the heart button state', async () => {
+  // Isolated store per test — the app's singleton `store` is shared across every test in this
+  // file, and this test dispatches into it, so a fresh instance keeps that mutation from leaking
+  // into unrelated tests that render MainTabBar/other screens against the shared singleton.
+  const testStore = configureStore({ reducer: { favorites: favoritesReducer } });
+  const species = mockSpecies[0];
+  let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+  await ReactTestRenderer.act(() => {
+    renderer = ReactTestRenderer.create(
+      renderWithProviders(
+        <SpeciesInfoScreen {...createSpeciesInfoProps(species.speciesId)} />,
+        [],
+        testStore,
+      ),
+    );
+  });
+
+  const findHeartButton = (label: string) =>
+    renderer!.root.findAllByProps({ accessibilityLabel: label })[0];
+
+  expect(findHeartButton('Add to favorites').props.accessibilityState).toEqual({ selected: false });
+
+  await ReactTestRenderer.act(() => {
+    findHeartButton('Add to favorites').props.onPress();
+  });
+
+  expect(testStore.getState().favorites).toEqual([
+    expect.objectContaining({ speciesId: species.speciesId, speciesName: species.speciesName }),
+  ]);
+  expect(findHeartButton('Remove from favorites').props.accessibilityState).toEqual({ selected: true });
+
+  await ReactTestRenderer.act(() => {
+    findHeartButton('Remove from favorites').props.onPress();
+  });
+
+  expect(testStore.getState().favorites).toEqual([]);
+  expect(findHeartButton('Add to favorites').props.accessibilityState).toEqual({ selected: false });
+});
+
+test('filters favorited species by the active tab on FavoritesScreen', async () => {
+  // zz-plant: toxic to pets, bright light, 14-day interval -> "easy".
+  // parlor-palm: pet-safe, shade-tolerant, 12-day interval -> "manageable".
+  const zzPlant = mockSpecies.find(species => species.speciesId === 'zz-plant')!;
+  const parlorPalm = mockSpecies.find(species => species.speciesId === 'parlor-palm')!;
+  const testStore = configureStore({
+    reducer: { favorites: favoritesReducer },
+    preloadedState: {
+      favorites: [
+        { addedAt: '2026-01-01T00:00:00.000Z', image: zzPlant.image, speciesId: zzPlant.speciesId, speciesName: zzPlant.speciesName },
+        { addedAt: '2026-01-02T00:00:00.000Z', image: parlorPalm.image, speciesId: parlorPalm.speciesId, speciesName: parlorPalm.speciesName },
+      ],
+    },
+  });
+  let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+  await ReactTestRenderer.act(() => {
+    renderer = ReactTestRenderer.create(
+      renderWithProviders(<FavoritesScreen {...createFavoritesProps()} />, [], testStore),
+    );
+  });
+
+  const hasCardFor = (speciesName: string) =>
+    renderer!.root.findAllByProps({ accessibilityLabel: `Open ${speciesName}` }).length > 0;
+  const findTab = (label: string) =>
+    renderer!.root
+      .findAllByType(TouchableOpacity)
+      .find(node => node.props.accessibilityRole === 'tab' && node.findByType(AppText).props.children === label);
+  const pressTab = (label: string) => {
+    const tab = findTab(label);
+    ReactTestRenderer.act(() => {
+      tab!.props.onPress();
+    });
+  };
+
+  expect(hasCardFor(zzPlant.speciesName)).toBe(true);
+  expect(hasCardFor(parlorPalm.speciesName)).toBe(true);
+
+  // High-Maintenance matches neither favorited species, so it shouldn't even be offered as a tab.
+  expect(findTab('High-Maintenance')).toBeUndefined();
+
+  pressTab('Pet Approved');
+  expect(hasCardFor(zzPlant.speciesName)).toBe(false);
+  expect(hasCardFor(parlorPalm.speciesName)).toBe(true);
+
+  pressTab('Easy Peasy');
+  expect(hasCardFor(zzPlant.speciesName)).toBe(true);
+  expect(hasCardFor(parlorPalm.speciesName)).toBe(false);
+});
+
+test('FavoritesScreen has no designed empty state — it falls back to Home if reached with zero favorites', async () => {
+  // The heart nav item only exists while favorites.length > 0, so landing here empty (e.g.
+  // unfavoriting your last plant while already on this screen) should navigate to Home
+  // immediately rather than render a dedicated empty state.
+  const testStore = configureStore({ reducer: { favorites: favoritesReducer } });
+  const tabNavigate = jest.fn();
+
+  await ReactTestRenderer.act(() => {
+    ReactTestRenderer.create(
+      renderWithProviders(<FavoritesScreen {...createFavoritesProps(tabNavigate)} />, [], testStore),
+    );
+  });
+
+  expect(tabNavigate).toHaveBeenCalledWith(SCREENS.HOME);
+});
+
 test('camera flow uses native camera capture when a device photo is available', async () => {
   const navigate = jest.fn();
   mockedLaunchCamera.mockResolvedValueOnce({
@@ -399,6 +625,8 @@ test('camera flow uses native camera capture when a device photo is available', 
 
   expect(mockedLaunchCamera).toHaveBeenCalledWith({
     cameraType: 'back',
+    maxHeight: 1280,
+    maxWidth: 1280,
     mediaType: 'photo',
     quality: 0.8,
     saveToPhotos: false,

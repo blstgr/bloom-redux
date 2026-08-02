@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
 
+import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { HomeScreen } from '../screens/HomeScreen';
 import { LibraryScreen } from '../screens/LibraryScreen';
 import { WaterScreen } from '../screens/WaterScreen';
@@ -28,6 +29,7 @@ export function TabNavigator() {
       <Tab.Screen component={HomeScreen} name={SCREENS.HOME} />
       <Tab.Screen component={LibraryScreen} name={SCREENS.LIBRARY} />
       <Tab.Screen component={WaterScreen} name={SCREENS.WATER} />
+      <Tab.Screen component={FavoritesScreen} name={SCREENS.FAVORITES} />
     </Tab.Navigator>
   );
 }

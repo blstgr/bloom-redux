@@ -20,6 +20,7 @@ export type AddPlantStackParamList = {
 };
 
 export type TabParamList = {
+  [SCREENS.FAVORITES]: undefined;
   [SCREENS.HOME]: undefined;
   [SCREENS.LIBRARY]: undefined;
   [SCREENS.WATER]: undefined;
@@ -34,7 +35,10 @@ export type RootStackParamList = {
   [SCREENS.SETTINGS_DRAWER]: NavigatorScreenParams<SettingsDrawerParamList> | undefined;
   [SCREENS.ADD_PLANT_STACK]: NavigatorScreenParams<AddPlantStackParamList> | undefined;
   [SCREENS.PLANT_DETAIL]: { ownedPlantId?: string } | undefined;
-  [SCREENS.SPECIES_INFO]: { speciesId?: string } | undefined;
+  /** speciesName: the already-known name from the search result that led here — only used if
+   * Perenual's species/details call needs the mocked-fallback path (see
+   * speciesDetailsFallback.ts), never to invent a name shown to the user. */
+  [SCREENS.SPECIES_INFO]: { speciesId?: string; speciesName?: string } | undefined;
 };
 
 export type RootNavigation = NativeStackNavigationProp<RootStackParamList>;
@@ -91,4 +95,12 @@ export type PlantDetailScreenProps = NativeStackScreenProps<
 export type SpeciesInfoScreenProps = NativeStackScreenProps<
   RootStackParamList,
   typeof SCREENS.SPECIES_INFO
+>;
+
+export type FavoritesScreenProps = CompositeScreenProps<
+  BottomTabScreenProps<TabParamList, typeof SCREENS.FAVORITES>,
+  CompositeScreenProps<
+    DrawerScreenProps<SettingsDrawerParamList, typeof SCREENS.MAIN_TABS>,
+    NativeStackScreenProps<RootStackParamList>
+  >
 >;

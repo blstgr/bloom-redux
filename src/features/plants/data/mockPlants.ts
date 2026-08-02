@@ -1,5 +1,7 @@
 import type { ImageSourcePropType } from 'react-native';
 
+import type { PlantLightNeed } from '../../../services/types';
+
 import { buildPlantDescription } from './plantDescription';
 
 const marbleQueenPothos = require('../../../assets/images/marble-queen-pothos.jpg');
@@ -21,6 +23,9 @@ export type PlantSpecies = {
   detailImage: ImageSourcePropType;
   detailImageUrl: string;
   image: ImageSourcePropType;
+  /** Whether this species is toxic to cats/dogs (ASPCA-style toxicity, not human toxicity). */
+  isToxicToPets: boolean;
+  lightNeed: PlantLightNeed;
   speciesId: string;
   speciesName: string;
   wateringIntervalDays: number;
@@ -73,6 +78,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: zzPlant,
     detailImageUrl: DETAIL_IMAGE_URLS[1],
     image: zzPlant,
+    isToxicToPets: true,
+    lightNeed: 'bright',
     speciesId: 'zz-plant',
     speciesName: 'ZZ plant',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
@@ -89,6 +96,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: monsteraSunset,
     detailImageUrl: DETAIL_IMAGE_URLS[0],
     image: monsteraFull,
+    isToxicToPets: true,
+    lightNeed: 'bright',
     speciesId: 'monstera-deliciosa',
     speciesName: 'Monstera Deliciosa',
     wateringIntervalDays: 10,
@@ -105,6 +114,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: marbleQueenPothos,
     detailImageUrl: DETAIL_IMAGE_URLS[2],
     image: marbleQueenPothos,
+    isToxicToPets: true,
+    lightNeed: 'bright',
     speciesId: 'marble-queen-pothos',
     speciesName: 'Marble Queen Pothos',
     wateringIntervalDays: 10,
@@ -121,6 +132,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: parlorPalm,
     detailImageUrl: DETAIL_IMAGE_URLS[3],
     image: parlorPalm,
+    isToxicToPets: false,
+    lightNeed: 'low',
     speciesId: 'parlor-palm',
     speciesName: 'Parlor Palm',
     wateringIntervalDays: 12,
@@ -137,6 +150,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: moneyTree,
     detailImageUrl: DETAIL_IMAGE_URLS[4],
     image: moneyTree,
+    isToxicToPets: false,
+    lightNeed: 'bright',
     speciesId: 'money-tree',
     speciesName: 'Money Tree',
     wateringIntervalDays: 12,
@@ -153,6 +168,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: rubberPlant,
     detailImageUrl: DETAIL_IMAGE_URLS[5],
     image: rubberPlant,
+    isToxicToPets: true,
+    lightNeed: 'bright',
     speciesId: 'rubber-plant',
     speciesName: 'Rubber Plant',
     wateringIntervalDays: 12,
@@ -169,6 +186,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: prayerPlant,
     detailImageUrl: DETAIL_IMAGE_URLS[0],
     image: prayerPlant,
+    isToxicToPets: false,
+    lightNeed: 'bright',
     speciesId: 'prayer-plant',
     speciesName: 'Prayer Plant',
     wateringIntervalDays: 6,
@@ -185,6 +204,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: variegatedPeperomia,
     detailImageUrl: DETAIL_IMAGE_URLS[1],
     image: variegatedPeperomia,
+    isToxicToPets: false,
+    lightNeed: 'bright',
     speciesId: 'variegated-peperomia',
     speciesName: 'Variegated Peperomia',
     wateringIntervalDays: 12,
@@ -201,6 +222,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: temporaryMonsteraThree,
     detailImageUrl: DETAIL_IMAGE_URLS[3],
     image: temporaryMonsteraThree,
+    isToxicToPets: false,
+    lightNeed: 'bright',
     speciesId: 'zebra-haworthia',
     speciesName: 'Zebra Haworthia',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
@@ -217,6 +240,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: marbleQueenPothos,
     detailImageUrl: DETAIL_IMAGE_URLS[4],
     image: marbleQueenPothos,
+    isToxicToPets: false,
+    lightNeed: 'bright',
     speciesId: 'zebra-cactus',
     speciesName: 'Zebra Cactus',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
@@ -233,6 +258,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: prayerPlant,
     detailImageUrl: DETAIL_IMAGE_URLS[5],
     image: prayerPlant,
+    isToxicToPets: true,
+    lightNeed: 'bright',
     speciesId: 'zebrina',
     speciesName: 'Zebrina',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
@@ -249,6 +276,8 @@ export const mockSpecies: PlantSpecies[] = [
     detailImage: variegatedPeperomia,
     detailImageUrl: DETAIL_IMAGE_URLS[0],
     image: variegatedPeperomia,
+    isToxicToPets: false,
+    lightNeed: 'bright',
     speciesId: 'zygocactus',
     speciesName: 'Zygocactus',
     wateringIntervalDays: WATERING_INTERVAL_DAYS,
@@ -259,4 +288,48 @@ export const initialOwnedPlants: OwnedPlant[] = [];
 
 export function getSpeciesById(speciesId: string | undefined) {
   return mockSpecies.find(species => species.speciesId === speciesId);
+}
+
+// Common names a real identification/search result is likely to use, beyond the exact curated
+// `speciesName` string above — used only to match a real (already-identified) name against this
+// app's own curated care facts for speciesDetailsFallback.ts's synthesized-response fallback,
+// never to invent a name shown to the user.
+const MOCK_SPECIES_NAME_ALIASES: Record<string, string[]> = {
+  'zz-plant': ['zz', 'zamioculcas', 'zanzibar gem'],
+  'monstera-deliciosa': ['monstera', 'swiss cheese plant', 'ceriman'],
+  'marble-queen-pothos': ['pothos', 'devils ivy', "devil's ivy", 'epipremnum'],
+  'parlor-palm': ['chamaedorea', 'neanthe bella'],
+  'money-tree': ['pachira', 'malabar chestnut', 'guiana chestnut'],
+  'rubber-plant': ['rubber fig', 'ficus elastica'],
+  'prayer-plant': ['maranta'],
+  'variegated-peperomia': ['peperomia', 'radiator plant'],
+  'zebra-haworthia': ['haworthia', 'haworthiopsis'],
+  'zebra-cactus': ['zebra plant'],
+  zebrina: ['tradescantia', 'wandering jew', 'inch plant'],
+  zygocactus: ['schlumbergera', 'christmas cactus'],
+};
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/** Whole-word/phrase containment, not raw substring — a raw `.includes('zz')` would also match
+ * any name that merely contains the letters "zz" (e.g. a real houseplant nickname like "Frizzle
+ * Sizzle"), wrongly attributing zz-plant's care facts to it. */
+function containsAsWord(haystack: string, needle: string): boolean {
+  return new RegExp(`\\b${escapeRegExp(needle)}\\b`).test(haystack);
+}
+
+/** Fuzzy name match against this app's curated seed species — see speciesDetailsFallback.ts for
+ * why this exists (it's a care-facts lookup, not a source of truth for names shown to users). */
+export function findMockSpeciesByName(query: string): PlantSpecies | undefined {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return undefined;
+
+  return mockSpecies.find(species => {
+    if (species.speciesName.toLowerCase() === normalized) return true;
+
+    const aliases = MOCK_SPECIES_NAME_ALIASES[species.speciesId] ?? [];
+    return aliases.some(alias => containsAsWord(normalized, alias) || containsAsWord(alias, normalized));
+  });
 }
