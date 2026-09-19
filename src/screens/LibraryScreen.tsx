@@ -8,17 +8,13 @@ import { Icon } from '../components/ui/Icon';
 import { Input, type InputActions } from '../components/ui/Input';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
+import { searchSpeciesByRelevance } from '../features/plants/data/speciesSearch';
 import type { PlantSpecies } from '../features/plants/data/types';
 import { SCREENS, type LibraryScreenProps, useTabScreenNavigation } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
-import { searchSpecies } from '../services/plantApi';
 import type { PerenualSpeciesListItem } from '../services/types';
 import { colors, layout, radii, sizes, spacing } from '../theme';
 
-const MAX_RESULTS = 8;
-const RANK_STARTS_WITH = 0;
-const RANK_WORD_BOUNDARY = 1;
-export const RANK_SCIENTIFIC_NAME_MATCH = 2;
 const LIBRARY_PANEL_WIDTH = 327;
 const LIBRARY_SUBTITLE_LINE_HEIGHT = 20.4;
 // Matches searchWrap's own marginTop below, so the floating search bar sits the same
@@ -31,43 +27,6 @@ const MIN_SEARCH_QUERY_LENGTH = 2;
 // Delays the actual Perenual request until typing pauses, so a full word costs one request
 // instead of one per keystroke — Perenual's free-tier daily cap is easy to exhaust otherwise.
 const SEARCH_DEBOUNCE_MS = 350;
-
-/** Scientific names carry punctuation ("Maranta leuconeura 'Erythroneura'") that a plain word
- * split leaves attached ("'erythroneura'") — strip anything that isn't a letter from each token's
- * edges before comparing. */
-function getScientificNameTokens(scientificName: string[]): string[] {
-  return scientificName
-    .flatMap(name => name.toLowerCase().split(/\s+/))
-    .map(token => token.replace(/^[^a-z]+|[^a-z]+$/g, ''))
-    .filter(token => token.length > 0);
-}
-
-/**
- * Perenual's own search ranking is a poor fit for search-as-you-type: it matches substrings
- * across every field (scientific name, family, etc), not just the displayed common name, so a
- * query like "pa" comes back with real matches ("Paperbark Maple") mixed in with names that only
- * coincidentally contain the query mid-word ("Japanese Maple" via "ja-PA-nese"), with no
- * relevance signal distinguishing them. Rank what we did get — starts-with (common name) first,
- * then a word-boundary match (a new word in the common name starts with the query), then an exact
- * whole-word match against a scientific-name token (so searching a genus like "Maranta" still
- * finds species whose common name is something unrelated-looking like "prayer plant") — and drop
- * plain no-boundary substring matches entirely (e.g. "palm" merely prefixing "palmatum", not
- * equal to it), rather than pad the list with weak, coincidental hits.
- */
-export function rankByRelevance(item: PerenualSpeciesListItem, normalizedQuery: string): number | null {
-  const normalizedName = item.common_name.toLowerCase();
-  if (normalizedName.startsWith(normalizedQuery)) return RANK_STARTS_WITH;
-  if (normalizedName.includes(` ${normalizedQuery}`)) return RANK_WORD_BOUNDARY;
-
-  // Match each typed word against the scientific-name tokens individually, not the whole query
-  // as one token — otherwise a genus+species query ("Hoya carnosa") could never match, since no
-  // single token ever equals a multi-word string.
-  const scientificNameTokens = getScientificNameTokens(item.scientific_name);
-  const queryTokens = normalizedQuery.split(/\s+/).filter(token => token.length > 0);
-  if (queryTokens.every(token => scientificNameTokens.includes(token))) return RANK_SCIENTIFIC_NAME_MATCH;
-
-  return null;
-}
 
 export function LibraryScreen({ navigation }: LibraryScreenProps) {
   const insets = useSafeAreaInsets();
@@ -117,18 +76,10 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
     searchRequestIdRef.current = requestId;
 
     const debounceTimeout = setTimeout(() => {
-      searchSpecies(normalizedQuery)
+      searchSpeciesByRelevance(normalizedQuery)
         .then(items => {
           if (searchRequestIdRef.current !== requestId) return;
-          // Only keep results actually relevant to what was typed (see rankByRelevance above for
-          // why Perenual's own matches need this), ranked so the closest matches come first; no
-          // weak coincidental substring hits.
-          const relevantItems = items
-            .map(item => ({ item, rank: rankByRelevance(item, normalizedQuery) }))
-            .filter((entry): entry is { item: PerenualSpeciesListItem; rank: number } => entry.rank !== null)
-            .sort((a, b) => a.rank - b.rank)
-            .map(entry => entry.item);
-          setResults(relevantItems.slice(0, MAX_RESULTS));
+          setResults(items);
           setSearchError(false);
         })
         .catch(() => {

@@ -1,6 +1,6 @@
-import type { PerenualSpeciesListItem } from '../services/types';
+import type { PerenualSpeciesListItem } from '../../../services/types';
 
-import { RANK_SCIENTIFIC_NAME_MATCH, rankByRelevance } from './LibraryScreen';
+import { rankByRelevance } from './speciesSearch';
 
 function buildItem(overrides: Partial<PerenualSpeciesListItem> = {}): PerenualSpeciesListItem {
   return {
@@ -11,6 +11,8 @@ function buildItem(overrides: Partial<PerenualSpeciesListItem> = {}): PerenualSp
     ...overrides,
   };
 }
+
+const SCIENTIFIC_NAME_RANK = 2;
 
 describe('rankByRelevance', () => {
   it('ranks a common-name starts-with match highest', () => {
@@ -29,7 +31,7 @@ describe('rankByRelevance', () => {
       common_name: 'prayer plant',
       scientific_name: ['Maranta leuconeura var. erythroneura'],
     });
-    expect(rankByRelevance(item, 'maranta')).toBe(RANK_SCIENTIFIC_NAME_MATCH);
+    expect(rankByRelevance(item, 'maranta')).toBe(SCIENTIFIC_NAME_RANK);
   });
 
   it('does not match a query that is only a substring/prefix of a scientific-name word, not the whole word', () => {
@@ -44,7 +46,7 @@ describe('rankByRelevance', () => {
       common_name: 'red-veined prayer plant',
       scientific_name: ["Maranta leuconeura 'Erythroneura'"],
     });
-    expect(rankByRelevance(item, 'erythroneura')).toBe(RANK_SCIENTIFIC_NAME_MATCH);
+    expect(rankByRelevance(item, 'erythroneura')).toBe(SCIENTIFIC_NAME_RANK);
   });
 
   it('returns null for a plain coincidental substring match in the common name', () => {
