@@ -1,4 +1,3 @@
-import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -10,13 +9,7 @@ import { TopActions } from '../components/ui/TopActions';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
 import { buildPlantSchedule, getScheduleBaseDate, isWateringDue } from '../features/plants/data/schedule';
 import { WateringCard } from '../features/watering/components/WateringCard';
-import {
-  SCREENS,
-  type RootNavigation,
-  type SettingsDrawerParamList,
-  type TabParamList,
-  type WaterScreenProps,
-} from '../navigation';
+import { SCREENS, type WaterScreenProps, useTabScreenNavigation } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
 import { colors, layout, spacing } from '../theme';
 
@@ -25,7 +18,7 @@ const EMPTY_SUBTITLE_LINE_HEIGHT = 20;
 const WATERING_CARD_GAP = 4;
 
 export function WaterScreen({ navigation }: WaterScreenProps) {
-  const rootNavigation = navigation.getParent()?.getParent<RootNavigation>();
+  const { navigateTab, openAddPlant, openPlantDetail, openSettings } = useTabScreenNavigation(navigation);
   const { getSpeciesById, markWatered, ownedPlants } = usePlantData();
   const scheduledPlants = ownedPlants
     .map(ownedPlant => {
@@ -43,18 +36,6 @@ export function WaterScreen({ navigation }: WaterScreenProps) {
       (a, b) => getScheduleBaseDate(a.ownedPlant).getTime() - getScheduleBaseDate(b.ownedPlant).getTime(),
     );
 
-  const openSettings = React.useCallback(() => {
-    navigation.getParent<DrawerNavigationProp<SettingsDrawerParamList>>()?.openDrawer();
-  }, [navigation]);
-  const handleNavigateTab = React.useCallback(
-    (screen: keyof TabParamList) => {
-      navigation.navigate(screen);
-    },
-    [navigation],
-  );
-  const handleAddPlant = React.useCallback(() => {
-    rootNavigation?.navigate(SCREENS.ADD_PLANT_STACK);
-  }, [rootNavigation]);
 
   return (
     <ScreenLayout
@@ -77,8 +58,8 @@ export function WaterScreen({ navigation }: WaterScreenProps) {
           bottomBar={(
             <MainTabBar
               activeScreen={SCREENS.WATER}
-              onAddPlant={handleAddPlant}
-              onNavigate={handleNavigateTab}
+              onAddPlant={openAddPlant}
+              onNavigate={navigateTab}
             />
           )}
         />
@@ -97,9 +78,7 @@ export function WaterScreen({ navigation }: WaterScreenProps) {
                   month={currentSchedule.month}
                   onDismiss={() => markWatered(ownedPlant.ownedPlantId)}
                   onPress={() => {
-                    rootNavigation?.navigate(SCREENS.PLANT_DETAIL, {
-                      ownedPlantId: ownedPlant.ownedPlantId,
-                    });
+                    openPlantDetail(ownedPlant.ownedPlantId);
                   }}
                 />
               );

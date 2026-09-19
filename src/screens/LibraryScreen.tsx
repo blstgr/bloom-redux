@@ -9,7 +9,7 @@ import { Input, type InputActions } from '../components/ui/Input';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
 import type { PlantSpecies } from '../features/plants/data/types';
-import { SCREENS, type LibraryScreenProps, type RootNavigation, type TabParamList } from '../navigation';
+import { SCREENS, type LibraryScreenProps, useTabScreenNavigation } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
 import { searchSpecies } from '../services/plantApi';
 import type { PerenualSpeciesListItem } from '../services/types';
@@ -71,7 +71,7 @@ export function rankByRelevance(item: PerenualSpeciesListItem, normalizedQuery: 
 
 export function LibraryScreen({ navigation }: LibraryScreenProps) {
   const insets = useSafeAreaInsets();
-  const rootNavigation = navigation.getParent()?.getParent<RootNavigation>();
+  const { navigateTab, openAddPlant, openAddPlantPhotoSearch, openSpeciesInfo } = useTabScreenNavigation(navigation);
   const {
     addSearchHistoryEntry,
     pendingLibrarySearch,
@@ -141,27 +141,12 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
     return () => clearTimeout(debounceTimeout);
   }, [isSearching, normalizedQuery]);
 
-  const handleNavigateTab = React.useCallback(
-    (screen: keyof TabParamList) => {
-      navigation.navigate(screen);
-    },
-    [navigation],
-  );
-  const handleAddPlant = React.useCallback(() => {
-    rootNavigation?.navigate(SCREENS.ADD_PLANT_STACK);
-  }, [rootNavigation]);
-  const handleSearchByPhoto = React.useCallback(() => {
-    rootNavigation?.navigate(SCREENS.ADD_PLANT_STACK, {
-      screen: SCREENS.ADD_PLANT_CAMERA,
-      params: { mode: 'search' },
-    });
-  }, [rootNavigation]);
   const handleOpenSpecies = React.useCallback(
     (species: PlantSpecies) => {
       addSearchHistoryEntry(species);
-      rootNavigation?.navigate(SCREENS.SPECIES_INFO, { speciesId: species.speciesId });
+      openSpeciesInfo({ speciesId: species.speciesId });
     },
-    [addSearchHistoryEntry, rootNavigation],
+    [addSearchHistoryEntry, openSpeciesInfo],
   );
   // Navigates immediately rather than waiting for the full species (facts, photo, generated
   // copy) to resolve first — SpeciesInfoScreen resolves it in place and shows its own loading
@@ -169,12 +154,12 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
   // before the tap even seems to register.
   const handleSelectSearchResult = React.useCallback(
     (item: PerenualSpeciesListItem) => {
-      rootNavigation?.navigate(SCREENS.SPECIES_INFO, {
+      openSpeciesInfo({
         speciesId: String(item.id),
         speciesName: item.common_name,
       });
     },
-    [rootNavigation],
+    [openSpeciesInfo],
   );
   const inputActions = React.useMemo<InputActions>(
     () => [
@@ -191,10 +176,10 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
             icon: 'camera',
             iconSize: 'md',
             key: 'search-by-photo',
-            onPress: handleSearchByPhoto,
+            onPress: openAddPlantPhotoSearch,
           },
     ],
-    [handleSearchByPhoto, query.length],
+    [openAddPlantPhotoSearch, query.length],
   );
 
   return (
@@ -226,8 +211,8 @@ export function LibraryScreen({ navigation }: LibraryScreenProps) {
           bottomBar={(
             <MainTabBar
               activeScreen={SCREENS.LIBRARY}
-              onAddPlant={handleAddPlant}
-              onNavigate={handleNavigateTab}
+              onAddPlant={openAddPlant}
+              onNavigate={navigateTab}
             />
           )}
         />

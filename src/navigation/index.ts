@@ -17,3 +17,4 @@ export type {
   TabParamList,
   WaterScreenProps,
 } from './types';
+export * from './useTabScreenNavigation';

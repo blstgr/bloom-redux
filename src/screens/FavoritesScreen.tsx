@@ -1,4 +1,3 @@
-import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 
@@ -12,13 +11,7 @@ import { getDifficulty } from '../features/plants/data/difficulty';
 import { FAVORITES_TABS, type FavoritesTabKey } from '../features/plants/data/favoritesTabs';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
 import type { PlantSpecies } from '../features/plants/data/types';
-import {
-  SCREENS,
-  type FavoritesScreenProps,
-  type RootNavigation,
-  type SettingsDrawerParamList,
-  type TabParamList,
-} from '../navigation';
+import { SCREENS, type FavoritesScreenProps, useTabScreenNavigation } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
 import { useAppSelector } from '../store/hooks';
 import { layout, spacing } from '../theme';
@@ -50,7 +43,7 @@ function matchesTab(species: PlantSpecies, tabKey: FavoritesTabKey): boolean {
 }
 
 export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
-  const rootNavigation = navigation.getParent()?.getParent<RootNavigation>();
+  const { navigateTab, openAddPlant, openSettings, openSpeciesInfo } = useTabScreenNavigation(navigation);
   const favorites = useAppSelector(state => state.favorites);
   const { getSpeciesById } = usePlantData();
   const [activeTab, setActiveTab] = React.useState(FAVORITES_TABS[0].key);
@@ -65,18 +58,6 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
   const effectiveActiveTab = availableTabs.some(tab => tab.key === activeTab) ? activeTab : 'all';
   const visibleSpecies = favoritedSpecies.filter(species => matchesTab(species, effectiveActiveTab));
 
-  const openSettings = React.useCallback(() => {
-    navigation.getParent<DrawerNavigationProp<SettingsDrawerParamList>>()?.openDrawer();
-  }, [navigation]);
-  const handleNavigateTab = React.useCallback(
-    (screen: keyof TabParamList) => {
-      navigation.navigate(screen);
-    },
-    [navigation],
-  );
-  const handleAddPlant = React.useCallback(() => {
-    rootNavigation?.navigate(SCREENS.ADD_PLANT_STACK);
-  }, [rootNavigation]);
 
   // The heart nav item only exists while favorites.length > 0, so this screen has no designed
   // empty state — it's reachable empty only for an instant (e.g. unfavoriting your last plant
@@ -110,8 +91,8 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
           bottomBar={(
             <MainTabBar
               activeScreen={SCREENS.FAVORITES}
-              onAddPlant={handleAddPlant}
-              onNavigate={handleNavigateTab}
+              onAddPlant={openAddPlant}
+              onNavigate={navigateTab}
             />
           )}
         />
@@ -132,7 +113,7 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
             accessibilityLabel={`Open ${species.speciesName}`}
             image={species.image}
             onPress={() => {
-              rootNavigation?.navigate(SCREENS.SPECIES_INFO, { speciesId: species.speciesId });
+              openSpeciesInfo({ speciesId: species.speciesId });
             }}
           />
         ))}

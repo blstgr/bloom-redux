@@ -1,4 +1,3 @@
-import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
@@ -10,20 +9,14 @@ import { PlantCard } from '../components/ui/PlantCard';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { TopActions } from '../components/ui/TopActions';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
-import {
-  SCREENS,
-  type HomeScreenProps,
-  type RootNavigation,
-  type SettingsDrawerParamList,
-  type TabParamList,
-} from '../navigation';
+import { SCREENS, type HomeScreenProps, useTabScreenNavigation } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
 import { colors, layout, spacing } from '../theme';
 
 const EMPTY_SUBTITLE_LINE_HEIGHT = 20;
 
 export function HomeScreen({ navigation }: HomeScreenProps) {
-  const rootNavigation = navigation.getParent()?.getParent<RootNavigation>();
+  const { navigateTab, openAddPlant, openPlantDetail, openSettings } = useTabScreenNavigation(navigation);
   const { getSpeciesById, ownedPlants } = usePlantData();
   const plants = ownedPlants
     .map(ownedPlant => {
@@ -36,18 +29,6 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
       };
     })
     .filter(item => item != null);
-  const openSettings = React.useCallback(() => {
-    navigation.getParent<DrawerNavigationProp<SettingsDrawerParamList>>()?.openDrawer();
-  }, [navigation]);
-  const handleNavigateTab = React.useCallback(
-    (screen: keyof TabParamList) => {
-      navigation.navigate(screen);
-    },
-    [navigation],
-  );
-  const handleAddPlant = React.useCallback(() => {
-    rootNavigation?.navigate(SCREENS.ADD_PLANT_STACK);
-  }, [rootNavigation]);
 
   return (
     <ScreenLayout
@@ -70,8 +51,8 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
           bottomBar={(
             <MainTabBar
               activeScreen={SCREENS.HOME}
-              onAddPlant={handleAddPlant}
-              onNavigate={handleNavigateTab}
+              onAddPlant={openAddPlant}
+              onNavigate={navigateTab}
             />
           )}
         />
@@ -84,9 +65,7 @@ export function HomeScreen({ navigation }: HomeScreenProps) {
                 accessibilityLabel={`Open ${ownedPlant.customName}`}
                 image={ownedPlant.image}
                 onPress={() => {
-                  rootNavigation?.navigate(SCREENS.PLANT_DETAIL, {
-                    ownedPlantId: ownedPlant.ownedPlantId,
-                  });
+                  openPlantDetail(ownedPlant.ownedPlantId);
                 }}
               />
             ))}
