@@ -8,8 +8,8 @@ import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { TopActions } from '../components/ui/TopActions';
 import {
   usePlantData,
-  type SpeciesLookupFailureReason,
 } from '../features/plants/data/PlantDataProvider';
+import type { SpeciesLookupFailureReason } from '../features/plants/data/speciesResolution';
 import { SCREENS, type AddPlantLoaderScreenProps } from '../navigation';
 import { sizes } from '../theme';
 
