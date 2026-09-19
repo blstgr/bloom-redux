@@ -7,40 +7,13 @@ import { PlantCard } from '../components/ui/PlantCard';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { Tabs } from '../components/ui/Tabs';
 import { TopActions } from '../components/ui/TopActions';
-import { getDifficulty } from '../features/plants/data/difficulty';
-import { FAVORITES_TABS, type FavoritesTabKey } from '../features/plants/data/favoritesTabs';
+import { FAVORITES_TABS, matchesTab, type FavoritesTabKey } from '../features/plants/data/favoritesTabs';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
 import type { PlantSpecies } from '../features/plants/data/types';
 import { SCREENS, type FavoritesScreenProps, useTabScreenNavigation } from '../navigation';
 import { MainTabBar } from '../navigation/MainTabBar';
 import { useAppSelector } from '../store/hooks';
 import { layout, spacing } from '../theme';
-
-/** Throws instead of silently matching everything — reached only if a new FavoritesTabKey is
- * added to favoritesTabs.ts without a matching case below, which TypeScript already refuses to
- * compile (the `default` branch's `tabKey` narrows to `never` once every real case is handled). */
-function assertUnhandledTabKey(tabKey: never): never {
-  throw new Error(`Unhandled favorites tab key: ${String(tabKey)}`);
-}
-
-function matchesTab(species: PlantSpecies, tabKey: FavoritesTabKey): boolean {
-  switch (tabKey) {
-    case 'all':
-      return true;
-    case 'easy':
-    case 'manageable':
-    case 'diva':
-      return getDifficulty(species.wateringIntervalDays) === tabKey;
-    case 'pet-safe':
-      return !species.isToxicToPets;
-    case 'bright':
-      return species.lightNeed === 'bright';
-    case 'shade':
-      return species.lightNeed === 'low';
-    default:
-      return assertUnhandledTabKey(tabKey);
-  }
-}
 
 export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
   const { navigateTab, openAddPlant, openSettings, openSpeciesInfo } = useTabScreenNavigation(navigation);
