@@ -562,15 +562,41 @@ export function PlantDataProvider({
       const nameTiers = [...new Set([commonName, scientificName, genusName].filter((name): name is string => Boolean(name)))];
 
       let result: SpeciesLookupResult = { reason: 'no-perenual-match', success: false };
-      for (const name of nameTiers) {
+      for (const [tierIndex, name] of nameTiers.entries()) {
         result = await lookupSpeciesByName(name, image);
         if (result.success || result.reason !== 'no-perenual-match') break;
+
+        // lookupSpeciesByName logs the miss, but it is also called straight from Library search
+        // where there is no next tier, so it cannot say whether anything follows. Saying so here
+        // is what makes a routine fallback read as a fallback rather than a failure.
+        const nextName = nameTiers[tierIndex + 1];
+        if (nextName) {
+          console.warn(`identifyAndResolveSpecies: no Perenual match for "${name}" — retrying with "${nextName}"`);
+        }
       }
 
       return result;
     },
     [lookupSpeciesByName],
   );
+
+  /**
+   * The single way owned plants are written.
+   *
+   * `ownedPlantsRef` is the write-path source of truth: `saveDetection` and `renameOwnedPlant`
+   * must validate against the very latest list and return a duplicate-name result synchronously,
+   * which reading React state cannot guarantee between two saves in the same tick. `ownedPlants`
+   * state is the render path.
+   *
+   * They cannot diverge because every write goes through here, updating both in one step. What
+   * they used to do instead was assign `ownedPlantsRef.current` from *inside* a `setOwnedPlants`
+   * updater — a side effect in a function React may invoke twice under StrictMode and whose render
+   * it may discard, leaving the ref describing a list that was never committed.
+   */
+  const commitOwnedPlants = React.useCallback((nextPlants: OwnedPlant[]) => {
+    ownedPlantsRef.current = nextPlants;
+    setOwnedPlants(nextPlants);
+  }, []);
 
   const getOwnedPlantById = React.useCallback(
     (ownedPlantId: string | undefined) =>
@@ -579,12 +605,8 @@ export function PlantDataProvider({
   );
 
   const deleteOwnedPlant = React.useCallback((ownedPlantId: string) => {
-    setOwnedPlants(current => {
-      const nextPlants = current.filter(plant => plant.ownedPlantId !== ownedPlantId);
-      ownedPlantsRef.current = nextPlants;
-      return nextPlants;
-    });
-  }, []);
+    commitOwnedPlants(ownedPlantsRef.current.filter(plant => plant.ownedPlantId !== ownedPlantId));
+  }, [commitOwnedPlants]);
 
   const saveDetection = React.useCallback(
     (detectionId: string, customName: string): PlantNameSaveResult => {
@@ -621,40 +643,35 @@ export function PlantDataProvider({
           wateringHistory: [],
         },
       ];
-      ownedPlantsRef.current = nextPlants;
-      setOwnedPlants(nextPlants);
+      commitOwnedPlants(nextPlants);
 
       return {
         duplicate: false,
         ownedPlantId,
       };
     },
-    [detections, getSpeciesById],
+    [commitOwnedPlants, detections, getSpeciesById],
   );
 
   const markWatered = React.useCallback((ownedPlantId: string) => {
-    setOwnedPlants(current => {
-      const nextPlants = current.map(plant =>
+    commitOwnedPlants(
+      ownedPlantsRef.current.map(plant =>
         plant.ownedPlantId === ownedPlantId
           ? { ...plant, wateringHistory: [...plant.wateringHistory, new Date().toISOString()] }
           : plant,
-      );
-      ownedPlantsRef.current = nextPlants;
-      return nextPlants;
-    });
-  }, []);
+      ),
+    );
+  }, [commitOwnedPlants]);
 
   const unmarkWatered = React.useCallback((ownedPlantId: string) => {
-    setOwnedPlants(current => {
-      const nextPlants = current.map(plant =>
+    commitOwnedPlants(
+      ownedPlantsRef.current.map(plant =>
         plant.ownedPlantId === ownedPlantId
           ? { ...plant, wateringHistory: plant.wateringHistory.slice(0, -1) }
           : plant,
-      );
-      ownedPlantsRef.current = nextPlants;
-      return nextPlants;
-    });
-  }, []);
+      ),
+    );
+  }, [commitOwnedPlants]);
 
   const addSearchHistoryEntry = React.useCallback((species: PlantSpecies) => {
     setSearchHistory(current => [
@@ -675,17 +692,15 @@ export function PlantDataProvider({
         };
       }
 
-      setOwnedPlants(current => {
-        const nextPlants = current.map(plant =>
+      commitOwnedPlants(
+        currentPlants.map(plant =>
           plant.ownedPlantId === ownedPlantId ? { ...plant, customName: nextName } : plant,
-        );
-        ownedPlantsRef.current = nextPlants;
-        return nextPlants;
-      });
+        ),
+      );
 
       return { duplicate: false, ownedPlantId };
     },
-    [],
+    [commitOwnedPlants],
   );
 
   const value = React.useMemo<PlantDataContextValue>(
