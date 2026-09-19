@@ -14,6 +14,7 @@ import { Loader } from '../components/ui/Loader';
 import { ScreenLayout } from '../components/ui/ScreenLayout';
 import { TopActions } from '../components/ui/TopActions';
 import { usePlantData, type SpeciesLookupFailureReason } from '../features/plants/data/PlantDataProvider';
+import { toPerenualSpeciesId } from '../features/plants/data/speciesId';
 import type { PlantSpecies } from '../features/plants/data/types';
 import { SCREENS, type SpeciesInfoScreenProps } from '../navigation';
 import { toggleFavorite } from '../store/favoritesSlice';
@@ -114,8 +115,10 @@ export function SpeciesInfoScreen({ navigation, route }: SpeciesInfoScreenProps)
   React.useEffect(() => {
     if (!speciesIdParam || species || resolvingIdRef.current === speciesIdParam) return undefined;
 
-    const perenualId = Number(speciesIdParam);
-    if (Number.isNaN(perenualId)) return undefined;
+    // Null means this id names a seed species, which is already complete locally and has no
+    // remote record to fetch — see toPerenualSpeciesId.
+    const perenualId = toPerenualSpeciesId(speciesIdParam);
+    if (perenualId === null) return undefined;
 
     resolvingIdRef.current = speciesIdParam;
     let cancelled = false;
