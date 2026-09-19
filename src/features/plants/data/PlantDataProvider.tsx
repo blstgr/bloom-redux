@@ -12,16 +12,15 @@ import type {
   PerenualSpeciesListItem,
   ResolvedCareFacts,
 } from '../../../services/types';
-import { searchPhoto } from '../../../services/unsplashApi';
+import { GENERIC_QUERY_WORDS, searchPhoto } from '../../../services/unsplashApi';
 
 import {
   getSpeciesById as getMockSpeciesById,
   initialOwnedPlants as defaultInitialOwnedPlants,
-  type OwnedPlant,
-  type PlantDetection,
-  type PlantSpecies,
 } from './mockPlants';
 import { buildFallbackSpeciesDetails } from './speciesDetailsFallback';
+import { toDisplaySpeciesName } from './speciesName';
+import type { OwnedPlant, PlantDetection, PlantSpecies } from './types';
 
 const noPlantPhoto = require('../../../assets/images/no-plant-photo.jpg') as ImageSourcePropType;
 
@@ -179,18 +178,38 @@ function parseGenusAndSpeciesEpithet(scientificName: string[]): string | null {
   return `${genus} ${speciesEpithet}`;
 }
 
+/** "Maranta leuconeura 'Fascinator'" -> "Maranta" — the genus alone. Confirmed live that this is
+ * the single best photo query available: Unsplash returns 49 genuine results for "maranta" but
+ * only 1 for "Maranta leuconeura", while the common name "prayer plant" returns birthday cards,
+ * a mosque and a praying statue. Botanical names do not collide with unrelated subjects; common
+ * names are ordinary English words that do. */
+function parseGenus(scientificName: string[]): string | null {
+  const first = scientificName[SCIENTIFIC_NAME_INDEX];
+  if (!first) return null;
+
+  return first.trim().split(/\s+/)[GENUS_TOKEN_INDEX] ?? null;
+}
+
 /** "Shirazz Japanese Maple" -> "Japanese Maple" — drops a leading cultivar-style modifier so a
- * generic version of the plant can still be found even when the exact cultivar can't. */
+ * generic version of the plant can still be found even when the exact cultivar can't. Returns
+ * null when what remains is a single generic word ("Prayer Plant" -> "Plant"), which would match
+ * essentially any photo. */
 function stripLeadingWord(name: string): string | null {
   const words = name.trim().split(/\s+/);
   if (words.length < MIN_STRIPPABLE_WORD_COUNT) return null;
 
-  return words.slice(1).join(' ');
+  const remainder = words.slice(1).join(' ');
+  const isGenericRemainder = words.slice(1).every(word => GENERIC_QUERY_WORDS.has(word.toLowerCase()));
+  return isGenericRemainder ? null : remainder;
 }
 
 /**
- * Tiered photo search, most to least specific: a real (non-placeholder) Perenual photo, an exact
- * Unsplash match on the common name, the scientific name, then a genus-level common-name fallback.
+ * Tiered photo search. The BOTANICAL name is tried before the common name, always, whatever the
+ * user typed: a search for "prayer plant" must go out as "Maranta". Common names are ordinary
+ * English words that collide with unrelated photos (confirmed: "prayer plant" returns a praying
+ * statue, birthday cards and a mosque), while botanical names collide with nothing. Order: a real
+ * (non-placeholder) Perenual photo, genus + species epithet, genus alone, then the common name
+ * and a genus-level common-name fallback as last resorts.
  * Returns null (not an error) when nothing usable was found at any tier — callers fall back to
  * either the user's own captured photo (if this came from a photo-identify flow) or a generic
  * "no photo available" asset.
@@ -199,12 +218,16 @@ async function findSpeciesPhotoUrl(details: PerenualSpeciesDetails): Promise<str
   const realPerenualUrl = getRealPerenualImageUrl(details);
   if (realPerenualUrl) return realPerenualUrl;
 
-  const exactMatch = await searchPhoto(details.common_name);
-  if (exactMatch) return exactMatch;
-
   const scientificQuery = parseGenusAndSpeciesEpithet(details.scientific_name);
   const scientificMatch = scientificQuery ? await searchPhoto(scientificQuery) : null;
   if (scientificMatch) return scientificMatch;
+
+  const genusQuery = parseGenus(details.scientific_name);
+  const genusMatch = genusQuery ? await searchPhoto(genusQuery) : null;
+  if (genusMatch) return genusMatch;
+
+  const commonMatch = await searchPhoto(details.common_name);
+  if (commonMatch) return commonMatch;
 
   const genericQuery = stripLeadingWord(details.common_name);
   return genericQuery ? searchPhoto(genericQuery) : null;
@@ -253,7 +276,7 @@ async function resolveSpeciesCore(perenualId: number, knownName?: string): Promi
     generateSpeciesCopy(resolvedFacts, details),
   ]);
 
-  return { commonName: details.common_name, generated, photoUrl, resolvedFacts };
+  return { commonName: toDisplaySpeciesName(details.common_name), generated, photoUrl, resolvedFacts };
 }
 
 /** The caller-specific part: cheap, synchronous, never shared. `fallbackImage` (the user's own

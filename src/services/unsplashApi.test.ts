@@ -55,6 +55,39 @@ describe('searchPhoto', () => {
     expect(await searchPhoto('ponytail palm')).toBe('https://images.unsplash.com/ponytail-palm');
   });
 
+  it('never promotes a non-plant photo that matches only part of the name', async () => {
+    // Reproduces the real, confirmed case that broke SpeciesInfoScreen: for "prayer plant" the
+    // live API ranks plant photos at 0-7 and a praying statue at 8. Matching on the name's
+    // distinguishing part alone ("prayer", after stripping the generic word "plant") reached past
+    // eight plants to pick the statue. Systematic for common-noun names: money tree, rubber/
+    // snake/spider plant. The whole phrase must match, or no name match is claimed at all.
+    const payload: UnsplashSearchResponse = {
+      results: [
+        { alt_description: 'green and brown plant in brown clay pot', description: null, urls: { regular: 'https://images.unsplash.com/clay-pot-plant' } },
+        { alt_description: 'happy birthday greeting card', description: null, urls: { regular: 'https://images.unsplash.com/birthday-card' } },
+        { alt_description: 'Stone angel statue with hands clasped in prayer', description: 'Angel Statue', urls: { regular: 'https://images.unsplash.com/statue' } },
+      ],
+    };
+    mockFetchOnce({ json: () => Promise.resolve(payload), ok: true });
+
+    expect(await searchPhoto('prayer plant')).toBe('https://images.unsplash.com/clay-pot-plant');
+  });
+
+  it('returns null rather than a non-plant photo when nothing plausible is ranked', async () => {
+    // Unsplash's ranking is trusted only for a result that at least reads as a plant. When even
+    // that fails, null lets findSpeciesPhotoUrl try the next name tier instead of committing to
+    // something absurd.
+    const payload: UnsplashSearchResponse = {
+      results: [
+        { alt_description: 'happy birthday to you card', description: null, urls: { regular: 'https://images.unsplash.com/card' } },
+        { alt_description: 'Stone angel statue with hands clasped in prayer', description: 'Angel Statue', urls: { regular: 'https://images.unsplash.com/statue' } },
+      ],
+    };
+    mockFetchOnce({ json: () => Promise.resolve(payload), ok: true });
+
+    expect(await searchPhoto('some obscure cultivar')).toBeNull();
+  });
+
   it('falls back to the top-ranked hit when no result text confirms the query', async () => {
     const payload: UnsplashSearchResponse = {
       results: [

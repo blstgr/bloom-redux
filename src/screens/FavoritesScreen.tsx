@@ -10,8 +10,8 @@ import { Tabs } from '../components/ui/Tabs';
 import { TopActions } from '../components/ui/TopActions';
 import { getDifficulty } from '../features/plants/data/difficulty';
 import { FAVORITES_TABS, type FavoritesTabKey } from '../features/plants/data/favoritesTabs';
-import type { PlantSpecies } from '../features/plants/data/mockPlants';
 import { usePlantData } from '../features/plants/data/PlantDataProvider';
+import type { PlantSpecies } from '../features/plants/data/types';
 import {
   SCREENS,
   type FavoritesScreenProps,
@@ -81,6 +81,11 @@ export function FavoritesScreen({ navigation }: FavoritesScreenProps) {
   // The heart nav item only exists while favorites.length > 0, so this screen has no designed
   // empty state — it's reachable empty only for an instant (e.g. unfavoriting your last plant
   // while already here), and falls back to Home rather than showing a dedicated empty screen.
+  //
+  // Keyed on `favorites` (the Redux list) rather than the resolved `favoritedSpecies`, so this
+  // and MainTabBar's heart-item condition read the *same* value. Keying it on the resolved list
+  // would mean an unresolvable species leaves the heart item visible while this screen bounces
+  // straight back to Home the moment it's tapped.
   React.useEffect(() => {
     if (favoritedSpecies.length === 0) navigation.navigate(SCREENS.HOME);
   }, [favoritedSpecies.length, navigation]);

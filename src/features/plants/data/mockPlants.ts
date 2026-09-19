@@ -1,8 +1,6 @@
-import type { ImageSourcePropType } from 'react-native';
-
-import type { PlantLightNeed } from '../../../services/types';
-
 import { buildPlantDescription } from './plantDescription';
+import type { OwnedPlant, PlantSpecies } from './types';
+
 
 const marbleQueenPothos = require('../../../assets/images/marble-queen-pothos.jpg');
 const moneyTree = require('../../../assets/images/money-tree.jpg');
@@ -16,44 +14,6 @@ const prayerPlant = require('../../../assets/images/prayer-plant.jpg');
 const rubberPlant = require('../../../assets/images/rubber-plant.jpg');
 const variegatedPeperomia = require('../../../assets/images/variegated-peperomia.jpg');
 const zzPlant = require('../../../assets/images/zz-plant.jpg');
-
-export type PlantSpecies = {
-  category: string;
-  description: string;
-  detailImage: ImageSourcePropType;
-  detailImageUrl: string;
-  image: ImageSourcePropType;
-  /** Whether this species is toxic to cats/dogs (ASPCA-style toxicity, not human toxicity). */
-  isToxicToPets: boolean;
-  lightNeed: PlantLightNeed;
-  speciesId: string;
-  speciesName: string;
-  wateringIntervalDays: number;
-  /** Long, same-voice-as-description article for SpeciesInfoScreen. Only set for real
-   * Perenual/DeepSeek-sourced species — mock seed species fall back to repeating `description`. */
-  wikiArticle?: string;
-};
-
-export type OwnedPlant = {
-  addedAt: string;
-  customName: string;
-  /** The user's actual plant photo; species/API images stay in PlantSpecies. */
-  image: ImageSourcePropType;
-  ownedPlantId: string;
-  speciesId: string;
-  /** Watering events, oldest first. Undo removes only the most recent entry. */
-  wateringHistory: string[];
-};
-
-export type PlantDetection = {
-  detectionId: string;
-  /** Unset until species identification/lookup resolves. */
-  generatedName?: string;
-  image: ImageSourcePropType;
-  /** Unset until species identification/lookup resolves — see PlantDataProvider's
-   * identifyAndResolveSpecies/resolveSpeciesFromPerenualId. */
-  speciesId?: string;
-};
 
 const WATERING_INTERVAL_DAYS = 14;
 const DETAIL_IMAGE_URLS = [

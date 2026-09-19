@@ -8,8 +8,9 @@ import ReactTestRenderer from 'react-test-renderer';
 
 import { AppText } from '../src/components/ui/AppText';
 import { Button } from '../src/components/ui/Button';
-import { mockSpecies, type OwnedPlant, type PlantSpecies } from '../src/features/plants/data/mockPlants';
+import { mockSpecies } from '../src/features/plants/data/mockPlants';
 import { PlantDataProvider, usePlantData } from '../src/features/plants/data/PlantDataProvider';
+import type { OwnedPlant, PlantSpecies } from '../src/features/plants/data/types';
 import {
   SCREENS,
   type AddPlantCameraScreenProps,

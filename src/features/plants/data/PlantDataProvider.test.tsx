@@ -7,13 +7,13 @@ import { identifyPlant, PlantIdApiError } from '../../../services/plantIdApi';
 import type { PerenualSpeciesDetails, PerenualSpeciesListItem } from '../../../services/types';
 import { searchPhoto } from '../../../services/unsplashApi';
 
-import type { PlantSpecies } from './mockPlants';
 import {
   PlantDataProvider,
   usePlantData,
   type PlantDataContextValue,
   type SpeciesLookupResult,
 } from './PlantDataProvider';
+import type { PlantSpecies } from './types';
 
 // Factory mocks (not bare jest.mock automocks) so PlantApiError/PlantIdApiError/PlantCopyApiError
 // keep their real constructors — automocking them would strip the `this.kind = kind` assignment,
@@ -192,11 +192,11 @@ describe('PlantDataProvider photo resolution', () => {
       species = await expectResolvedSpecies(getValue, MATCH.id);
     });
 
-    expect(mockSearchPhoto).toHaveBeenCalledWith('ZZ plant');
+    expect(mockSearchPhoto).toHaveBeenCalledWith('Zamioculcas zamiifolia');
     expect(species.detailImageUrl).toBe('https://images.unsplash.com/exact-match.jpg');
   });
 
-  it('falls through common name -> scientific name -> generic name tiers in order', async () => {
+  it('falls through scientific name -> genus -> common name -> generic name tiers in order', async () => {
     const match: PerenualSpeciesListItem = { ...MATCH, common_name: 'Shirazz Japanese Maple' };
     const details: PerenualSpeciesDetails = {
       ...DETAILS,
@@ -209,6 +209,7 @@ describe('PlantDataProvider photo resolution', () => {
     mockSearchPhoto
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
       .mockResolvedValueOnce('https://images.unsplash.com/generic.jpg');
     const getValue = renderProvider();
 
@@ -217,9 +218,11 @@ describe('PlantDataProvider photo resolution', () => {
       species = await expectResolvedSpecies(getValue, match.id);
     });
 
-    expect(mockSearchPhoto).toHaveBeenNthCalledWith(1, 'Shirazz Japanese Maple');
-    expect(mockSearchPhoto).toHaveBeenNthCalledWith(2, 'Acer palmatum');
-    expect(mockSearchPhoto).toHaveBeenNthCalledWith(3, 'Japanese Maple');
+    // Botanical name first, always — whatever the user typed. See findSpeciesPhotoUrl.
+    expect(mockSearchPhoto).toHaveBeenNthCalledWith(1, 'Acer palmatum');
+    expect(mockSearchPhoto).toHaveBeenNthCalledWith(2, 'Acer');
+    expect(mockSearchPhoto).toHaveBeenNthCalledWith(3, 'Shirazz Japanese Maple');
+    expect(mockSearchPhoto).toHaveBeenNthCalledWith(4, 'Japanese Maple');
     expect(species.detailImageUrl).toBe('https://images.unsplash.com/generic.jpg');
   });
 
@@ -380,7 +383,7 @@ describe('PlantDataProvider identifyAndResolveSpecies name fallback', () => {
 
     expect(mockSearchSpecies).toHaveBeenNthCalledWith(1, 'Honeyplant');
     expect(mockSearchSpecies).toHaveBeenNthCalledWith(2, 'Hoya carnosa');
-    expect(result.success && result.species.speciesName).toBe('Wax plant');
+    expect(result.success && result.species.speciesName).toBe('Wax Plant');
   });
 
   it('falls back to the genus when both the common name and scientific name have no Perenual match', async () => {
@@ -415,7 +418,7 @@ describe('PlantDataProvider identifyAndResolveSpecies name fallback', () => {
     expect(mockSearchSpecies).toHaveBeenNthCalledWith(1, 'Moneytree');
     expect(mockSearchSpecies).toHaveBeenNthCalledWith(2, 'Pachira glabra');
     expect(mockSearchSpecies).toHaveBeenNthCalledWith(3, 'Pachira');
-    expect(result.success && result.species.speciesName).toBe('Guiana chestnut');
+    expect(result.success && result.species.speciesName).toBe('Guiana Chestnut');
   });
 
   it('does not retry when every name tier collapses to the same single distinct name', async () => {
@@ -496,7 +499,7 @@ describe('PlantDataProvider species/details MOCKED fallback', () => {
     expect(result!).toEqual({
       species: expect.objectContaining({
         // Name comes from Perenual's own search match (real), not anything invented here.
-        speciesName: 'ZZ plant',
+        speciesName: 'ZZ Plant',
         // Care facts come from this app's curated seed data via the name match, not fabricated.
         isToxicToPets: true,
         lightNeed: 'bright',
@@ -652,7 +655,7 @@ describe('PlantDataProvider concurrent resolution', () => {
       [resultA, resultB] = await Promise.all([promiseA, promiseB]);
     });
 
-    expect(resultA.success && resultA.species.speciesName).toBe('ZZ plant');
+    expect(resultA.success && resultA.species.speciesName).toBe('ZZ Plant');
     expect(resultB.success && resultB.species.speciesName).toBe('Zanzibar Gem');
     // Both names skip the confirmed-blocked live species/details call entirely — neither should
     // have needed it, and reusing the wrong in-flight entry is exactly what would have made one

@@ -2,7 +2,6 @@ import { getUnsplashAccessKey } from './config';
 import { UNSPLASH_BASE_URL } from './constants';
 import type { UnsplashPhoto, UnsplashSearchResponse } from './types';
 
-const FIRST_RESULT_INDEX = 0;
 // Unsplash's full-text relevance ranking is unreliable for plant names — confirmed directly
 // against the real API that its #1 hit for "ZZ plant" is a rubber plant photo tagged only "green
 // leaf plant", while a genuine ZZ plant photo (alt_description "zz plant stem against white
@@ -10,38 +9,53 @@ const FIRST_RESULT_INDEX = 0;
 // own alt/description text actually names the plant catches this; per_page=1 with blind trust in
 // the top hit does not.
 const SEARCH_RESULT_COUNT = 10;
-// Words generic enough to appear in nearly any houseplant photo's description (and so unable to
-// distinguish one plant from another) — stripped before matching so what's left is only the
-// query's actually-distinguishing words (e.g. "zz" out of "ZZ plant").
-const GENERIC_QUERY_WORDS = new Set(['a', 'of', 'plant', 'plants', 'the']);
+// Words too generic to identify a plant on their own. A name that reduces to nothing but these
+// cannot be confirmed by any photo's text, so the caller must try a different name tier instead.
+export const GENERIC_QUERY_WORDS = new Set(['a', 'of', 'plant', 'plants', 'the', 'tree', 'trees']);
+// Unsplash's ranking is semantically good but its text never names the species (see describesQuery).
+// So text is used only NEGATIVELY: a top-ranked result is accepted when its own words read as a
+// plant photo, and rejected otherwise. Confirmed live that this is what separates the usable hit
+// from the absurd one for "prayer plant": result 0 is "green and brown plant in brown clay pot"
+// while the praying statue that previously won sits at result 8 with no plant word at all.
+const PLANT_CONTEXT_WORDS = [
+  'plant', 'plants', 'leaf', 'leaves', 'foliage', 'pot', 'potted', 'succulent', 'cactus',
+  'flower', 'flowers', 'blossom', 'fern', 'palm', 'garden', 'greenery', 'houseplant', 'botanical',
+];
+
+function looksLikeAPlantPhoto(photo: UnsplashPhoto): boolean {
+  const text = `${photo.alt_description ?? ''} ${photo.description ?? ''}`.toLowerCase();
+  return PLANT_CONTEXT_WORDS.some(word => new RegExp(`\\b${word}\\b`).test(text));
+}
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function extractDistinguishingPhrase(query: string): string {
-  return query
-    .toLowerCase()
-    .split(/\s+/)
-    .filter(word => word.length > 0 && !GENERIC_QUERY_WORDS.has(word))
-    .join(' ');
+function normalizeQueryPhrase(query: string): string {
+  return query.trim().toLowerCase().replace(/\s+/g, ' ');
 }
 
 /**
- * A photo "confirms" a query only once the distinguishing words show up ADJACENT to each other,
- * in order — not just present somewhere each in the text. Confirmed live that requiring only
- * independent presence is too loose: a fashion portrait's own description contains both "ponytail"
- * (the model's hairstyle) and "palm" (blurry background trees) for the unrelated query "ponytail
- * palm", so it wrongly confirmed as a match. Requiring the words adjacent (as they'd appear if a
- * description were actually about the plant) rejects that false positive while still matching
- * every real case already confirmed working (e.g. "zz plant stem against white background"
- * contains "zz plant" adjacently).
+ * A photo "confirms" a query only when the WHOLE query appears adjacently, in order, in the
+ * photo's own text — not when some part of it does.
+ *
+ * Three real, confirmed false positives shaped this rule:
+ * - Unsplash's #1 hit for "ZZ plant" was a rubber plant tagged only "green leaf plant", while a
+ *   genuine match ("zz plant stem against white background") sat at position 2. Ranking alone
+ *   cannot be trusted.
+ * - A fashion portrait's description contained "ponytail" (the model's hair) and "palm" (blurry
+ *   background trees) for "ponytail palm" — both present, neither about the plant. Words must be
+ *   adjacent, as they would be in a description actually about the plant.
+ * - Matching on only the name's distinguishing part confirmed a photo of a PRAYING STATUE for
+ *   "prayer plant", because stripping the generic word "plant" left the bare word "prayer".
+ *   Systematic for any common-noun name: money tree, rubber/snake/spider plant. Hence the whole
+ *   phrase, never a fragment.
  */
-function describesQuery(photo: UnsplashPhoto, distinguishingPhrase: string): boolean {
-  if (!distinguishingPhrase) return false;
+function describesQuery(photo: UnsplashPhoto, phrase: string): boolean {
+  if (!phrase) return false;
 
   const text = `${photo.alt_description ?? ''} ${photo.description ?? ''}`.toLowerCase();
-  return new RegExp(`\\b${escapeRegExp(distinguishingPhrase)}\\b`).test(text);
+  return new RegExp(`\\b${escapeRegExp(phrase)}\\b`).test(text);
 }
 
 /** Searches Unsplash for a real, licensed photo matching the query. Returns null on no match —
@@ -61,10 +75,20 @@ export async function searchPhoto(query: string): Promise<string | null> {
   if (!response.ok) return null;
 
   const payload = (await response.json()) as UnsplashSearchResponse;
-  const distinguishingPhrase = extractDistinguishingPhrase(query);
-  // Prefer the first result whose own text confirms it matches; fall back to Unsplash's own
-  // top-ranked hit (the prior behavior) if nothing confirms — still our best available guess.
-  const confirmedMatch = payload.results.find(photo => describesQuery(photo, distinguishingPhrase));
+  const phrase = normalizeQueryPhrase(query);
+  // 1. A photo whose own text names the whole plant is the best evidence there is — rare, but
+  //    decisive when present (e.g. "zz plant stem against white background").
+  const confirmedMatch = payload.results.find(photo => describesQuery(photo, phrase));
+  if (confirmedMatch) return confirmedMatch.urls.regular;
 
-  return (confirmedMatch ?? payload.results[FIRST_RESULT_INDEX])?.urls.regular ?? null;
+  // 2. Otherwise trust Unsplash's own ranking, which IS semantically good, but only for a result
+  //    that at least reads as a plant photo. This is what rejects the statue, the birthday card
+  //    and the mosque that "prayer plant" otherwise returns.
+  const plausibleMatch = payload.results.find(looksLikeAPlantPhoto);
+  if (plausibleMatch) return plausibleMatch.urls.regular;
+
+  // 3. Nothing usable. Returning null lets findSpeciesPhotoUrl try the scientific name and then
+  //    the genus, and only if every tier fails does the species fall back to the generic
+  //    "no photo available" asset.
+  return null;
 }

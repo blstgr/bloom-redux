@@ -1,4 +1,4 @@
-import type { OwnedPlant, PlantSpecies } from './mockPlants';
+import type { OwnedPlant, PlantSpecies } from './types';
 
 export type PlantScheduleItem = {
   completed?: boolean;

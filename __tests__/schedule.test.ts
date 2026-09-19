@@ -1,5 +1,5 @@
-import type { OwnedPlant, PlantSpecies } from '../src/features/plants/data/mockPlants';
 import { isWateringDue, isWateringTooSoon } from '../src/features/plants/data/schedule';
+import type { OwnedPlant, PlantSpecies } from '../src/features/plants/data/types';
 
 const TEST_SPECIES: PlantSpecies = {
   category: 'Test',
