@@ -2,6 +2,7 @@ import { Image, type ImageSourcePropType } from 'react-native';
 
 import { getPlantNetApiKey } from './config';
 import { PLANTNET_BASE_URL, PLANTNET_MIN_CONFIDENCE_SCORE, PLANTNET_MIN_SCORE_GAP, PLANTNET_PROJECT } from './constants';
+import { FORBIDDEN_STATUS, readResponseBody, TOO_MANY_REQUESTS_STATUS } from './http';
 import type { IdentificationResult, PlantNetCandidate, PlantNetIdentifyResponse } from './types';
 
 export type PlantIdApiErrorKind = 'forbidden' | 'network' | 'quota-exceeded' | 'unknown';
@@ -16,8 +17,6 @@ export class PlantIdApiError extends Error {
   }
 }
 
-const QUOTA_EXCEEDED_STATUS = 429;
-const FORBIDDEN_STATUS = 403;
 // Pl@ntNet auto-detects which plant organ is in frame rather than requiring the caller to
 // specify leaf/flower/fruit/bark up front.
 const IDENTIFY_ORGAN = 'auto';
@@ -27,14 +26,6 @@ const IDENTIFY_IMAGE_TYPE = 'image/jpeg';
 // come back in the requester's inferred locale, which then fails to match Perenual's
 // English-only species database downstream.
 const IDENTIFY_LANG = 'en';
-
-async function readResponseBody(response: Response): Promise<string> {
-  try {
-    return await response.text();
-  } catch {
-    return '';
-  }
-}
 
 /** POSTs a captured/selected photo to Pl@ntNet and returns its ranked candidate list. */
 export async function identifyPlant(image: ImageSourcePropType): Promise<PlantNetCandidate[]> {
@@ -57,7 +48,7 @@ export async function identifyPlant(image: ImageSourcePropType): Promise<PlantNe
     throw new PlantIdApiError('network', 'Could not reach the plant identification service.');
   }
 
-  if (response.status === QUOTA_EXCEEDED_STATUS) {
+  if (response.status === TOO_MANY_REQUESTS_STATUS) {
     // Pl@ntNet returns 429 for both a burst-rate throttle and the daily quota being exhausted —
     // its response body is the only way to tell which, so surface it directly rather than a
     // generic message that looks identical for either cause.

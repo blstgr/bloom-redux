@@ -214,6 +214,23 @@ function stripLeadingWord(name: string): string | null {
  * either the user's own captured photo (if this came from a photo-identify flow) or a generic
  * "no photo available" asset.
  */
+/** Every API failure that reaches the UI funnels through here. The four services raise four
+ * different error types with overlapping `kind` unions (Perenual says 'rate-limited', Pl@ntNet
+ * says 'quota-exceeded' for the same thing), and this mapping was previously written out in three
+ * separate catch blocks — so adding a reason, or a fifth service, meant finding all three. */
+function toLookupFailureReason(error: unknown): SpeciesLookupFailureReason {
+  if (error instanceof PlantApiError) {
+    if (error.kind === 'rate-limited') return 'rate-limited';
+    if (error.kind === 'forbidden') return 'access-denied';
+  }
+  if (error instanceof PlantIdApiError) {
+    if (error.kind === 'quota-exceeded') return 'rate-limited';
+    if (error.kind === 'forbidden') return 'access-denied';
+  }
+  if (error instanceof PlantCopyApiError && error.kind === 'forbidden') return 'access-denied';
+  return 'network-error';
+}
+
 async function findSpeciesPhotoUrl(details: PerenualSpeciesDetails): Promise<string | null> {
   const realPerenualUrl = getRealPerenualImageUrl(details);
   if (realPerenualUrl) return realPerenualUrl;
@@ -427,14 +444,7 @@ export function PlantDataProvider({
           // doesn't trip React Native's red LogBox on top of the AlertModal/failure state the UI
           // already shows for this.
           console.warn('resolveSpeciesById failed', error);
-          if (error instanceof PlantApiError) {
-            if (error.kind === 'rate-limited') return { reason: 'rate-limited', success: false };
-            if (error.kind === 'forbidden') return { reason: 'access-denied', success: false };
-          }
-          if (error instanceof PlantCopyApiError && error.kind === 'forbidden') {
-            return { reason: 'access-denied', success: false };
-          }
-          return { reason: 'network-error', success: false };
+          return { reason: toLookupFailureReason(error), success: false };
         } finally {
           // Only clear this entry's own key, and only if it's still the promise we awaited —
           // another key (a different name, or the no-knownName one) may still have a genuinely
@@ -481,11 +491,7 @@ export function PlantDataProvider({
         // doesn't trip React Native's red LogBox on top of the AlertModal/failure state the UI
         // already shows for this.
         console.warn('lookupSpeciesByName: searchSpecies failed', error);
-        if (error instanceof PlantApiError) {
-          if (error.kind === 'rate-limited') return { reason: 'rate-limited', success: false };
-          if (error.kind === 'forbidden') return { reason: 'access-denied', success: false };
-        }
-        return { reason: 'network-error', success: false };
+        return { reason: toLookupFailureReason(error), success: false };
       }
 
       const match = results[FIRST_MATCH_INDEX];
@@ -513,11 +519,7 @@ export function PlantDataProvider({
         // doesn't trip React Native's red LogBox on top of the AlertModal/failure state the UI
         // already shows for this.
         console.warn('identifyAndResolveSpecies: identifyPlant failed', error);
-        if (error instanceof PlantIdApiError) {
-          if (error.kind === 'quota-exceeded') return { reason: 'rate-limited', success: false };
-          if (error.kind === 'forbidden') return { reason: 'access-denied', success: false };
-        }
-        return { reason: 'network-error', success: false };
+        return { reason: toLookupFailureReason(error), success: false };
       }
 
       const identification = resolveIdentification(candidates);

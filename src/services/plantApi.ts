@@ -1,5 +1,6 @@
 import { getPerenualApiKey } from './config';
 import { PERENUAL_BASE_URL } from './constants';
+import { FORBIDDEN_STATUS, readResponseBody, TOO_MANY_REQUESTS_STATUS } from './http';
 import type { PerenualSpeciesDetails, PerenualSpeciesListItem, PerenualSpeciesListResponse } from './types';
 
 export type PlantApiErrorKind = 'forbidden' | 'network' | 'rate-limited' | 'unknown';
@@ -14,16 +15,6 @@ export class PlantApiError extends Error {
   }
 }
 
-const RATE_LIMITED_STATUS = 429;
-const FORBIDDEN_STATUS = 403;
-
-async function readResponseBody(response: Response): Promise<string> {
-  try {
-    return await response.text();
-  } catch {
-    return '';
-  }
-}
 
 async function fetchPerenual<T>(path: string): Promise<T> {
   const separator = path.includes('?') ? '&' : '?';
@@ -36,7 +27,7 @@ async function fetchPerenual<T>(path: string): Promise<T> {
     throw new PlantApiError('network', 'Could not reach the plant species database.');
   }
 
-  if (response.status === RATE_LIMITED_STATUS) {
+  if (response.status === TOO_MANY_REQUESTS_STATUS) {
     // Perenual returns 429 for both a burst-rate throttle and the daily quota being exhausted —
     // its response body is the only way to tell which, so surface it directly rather than a
     // generic message that looks identical for either cause.

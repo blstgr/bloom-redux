@@ -2,6 +2,7 @@ import { PLANT_DESCRIPTION_MAX_CHARS } from '../features/plants/data/plantDescri
 
 import { getDeepSeekApiKey } from './config';
 import { DEEPSEEK_BASE_URL } from './constants';
+import { FORBIDDEN_STATUS } from './http';
 import type { GeneratedSpeciesCopy, PerenualSpeciesDetails, ResolvedCareFacts } from './types';
 
 export type PlantCopyApiErrorKind = 'forbidden' | 'network' | 'unknown';
@@ -17,7 +18,6 @@ export class PlantCopyApiError extends Error {
 }
 
 const DEEPSEEK_MODEL = 'deepseek-chat';
-const FORBIDDEN_STATUS = 403;
 const RETRY_BUDGET_MARGIN = 20;
 // A quick mobile card (~100-130 words), not an unbounded profile — DeepSeek's generation time
 // scales with output length, and an uncapped wikiArticle was the single slowest leg of the whole
