@@ -2,12 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react-native';
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 
-import { WateringSlider } from '../../../features/watering/components/WateringSlider';
-import { sizes, spacing } from '../../../theme';
+import { colors, radii, sizes, spacing } from '../../../theme';
 import { Button } from '../Button';
 import { NavBar as NavBarComponent, type NavItem } from '../NavBar';
 
 import { BottomActions } from './BottomActions';
+
+// The design system does not depend on any feature. This story used the real WateringSlider,
+// inverting the ui <- features direction so a change inside a feature could break a BottomActions
+// story. A plain stand-in demonstrates the slot just as well: what BottomActions does is position
+// whatever it is handed, not know what that is.
+function DemoBottomBar() {
+  return <View style={styles.demoBottomBar} />;
+}
 
 // Tab-only nav: home + water.
 const tabItems: NavItem[] = [
@@ -41,7 +48,7 @@ export const _01_All: Story = {
       <BottomActions
         bottomBar={<Button accessibilityLabel="Create item" icon="circle" iconOnly iconSize={sizes.icon.xl} variant="primary" />}
       />
-      <BottomActions bottomBar={<WateringSlider />} />
+      <BottomActions bottomBar={<DemoBottomBar />} />
       <BottomActions bottomBar={<InteractiveNavBar items={tabItems} initialKey="home" />} />
     </View>
   ),
@@ -59,7 +66,7 @@ export const _02_Action: Story = {
 export const _03_Slider: Story = {
   name: 'Slider',
   render: () => (
-    <BottomActions bottomBar={<WateringSlider />} />
+    <BottomActions bottomBar={<DemoBottomBar />} />
   ),
 };
 
@@ -71,6 +78,11 @@ export const _04_NavBar: Story = {
 };
 
 const styles = StyleSheet.create({
+  demoBottomBar: {
+    backgroundColor: colors.surface.peachDark,
+    borderRadius: radii.pill,
+    height: sizes.nav.item,
+  },
   centerStack: {
     alignItems: 'center',
     gap: spacing.xl,
